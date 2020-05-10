@@ -20,7 +20,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "mobilenet_v2_1_0_224_quant.h"
+//#include "mobilenet_v2_1_0_224_quant.h"
+#include "mobilenet_v1_0_25_128_quant.h"
 
 //#include "setup.h"
 #include "ImgIO.h"

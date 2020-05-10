@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#include "mobilenet_v2_1_0_224_quant.h"
+#include "mobilenet_v1_0_25_128_quant.h"
 #include "ImgIO.h"
 
 #include <string.h>
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     } else {
       label = dp->d_name[strlen(dp->d_name)-5] - '0'; 
       //Reading Image from Bridge
-      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), 0, 0)) {
+      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), 0, 0)) {
         printf("Failed to load image %s\n", filename_qfd);
         return 1;
       }

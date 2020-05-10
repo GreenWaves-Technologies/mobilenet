@@ -35,7 +35,7 @@ BUILD_DIR = BUILD_EMUL
 
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
-MAIN = $(MODEL_PREFIX)_emul
+MAIN = main_emul
 # Here we set the memory allocation for the generated kernels
 # REMEMBER THAT THE L1 MEMORY ALLOCATION MUST INCLUDE SPACE
 # FOR ALLOCATED STACKS!

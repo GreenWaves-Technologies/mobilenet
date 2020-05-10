@@ -2,7 +2,7 @@
 #ifndef __VWW_H__
 #define __VWW_H__
 
-#define __PREFIX(x) mobilenet_v2_0_25_128_quant ## x
+#define __PREFIX(x) mobilenet_v1_0_25_128_quant ## x
 
 #include "Gap.h"
 

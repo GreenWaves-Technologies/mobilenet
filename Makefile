@@ -10,7 +10,7 @@ endif
 
 include common.mk
 
-IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_224.ppm
+IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
 
 io=host
 
