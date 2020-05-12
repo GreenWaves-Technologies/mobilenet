@@ -9,7 +9,11 @@
 
 #include <stdio.h>
 
-#include "mobilenet_v1_0_25_128_quant.h"
+//#include "mobilenet_v1_0_25_128_quant.h"
+#include "mobilenet_v2_1_0_224_quant.h"
+//#include "mobilenet_v3_large_1_0_224_quant.h"
+
+#include "ordered_synset.h"
 #include "ImgIO.h"
 
 #include <string.h>
@@ -29,6 +33,9 @@
 #define STACK_SIZE     2048 
 #endif
 
+#define MAXCHAR 1000
+#define NUM_CLASSES 1001
+
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
 
 
@@ -37,75 +44,44 @@ L2_MEM short int *ResOut;
 L2_MEM unsigned char imgin_unsigned[AT_INPUT_SIZE];
 L2_MEM signed char *imgin_signed = imgin_unsigned;
 
+static int get_label_from_dirname(char *dir_name){
+  char *temp;
+  temp = strrchr(dir_name, '/') + 1;
+  if (temp==NULL){
+    return 0;
+  }
+  for (int i=0; i<NUM_CLASSES; i++){
+    if (!(strcmp(ORDERED_SYNSET[i], temp))){
+      printf("%s == %s\n", ORDERED_SYNSET[i], temp);
+      return i;
+    }
+  }
+  return 0;
+}
+
 static int RunNetwork()
 {
   __PREFIX(CNN)(imgin_signed, ResOut);
   //Checki Results
   int outclass, MaxPrediction = 0;
-  for(int i=0; i<1001; i++){
+  for(int i=0; i<NUM_CLASSES; i++){
     if (ResOut[i] > MaxPrediction){
       outclass = i;
     }
-    printf("%d, \n", ResOut[i]);
   }
-  printf("Predicted class: %d\n", outclass);
-  printf("With confidence: %d\n", MaxPrediction);
+  return outclass;
 }
 
-#define MAXCHAR 1000
-#define NUM_CLASS 1001
-//#define DATASET_DIM 10
-int main(int argc, char *argv[]) 
+int read_folder(char *dir)
 {
-  if (argc < 2) {
-    printf("Usage: %s [image_file]\n", argv[0]);
-    exit(1);
-  }
-
-/* TO READ LABELS FROM FILE */
-/*FILE *fp;
-  char str[MAXCHAR];
-  char* filename = "./label.txt";
-  int init_size;
-
-  fp = fopen(filename, "r");
-  if (fp == NULL){
-      printf("Could not open file %s",filename);
-  }
-  while (fgets(str, MAXCHAR, fp) != NULL){  
-      init_size = strlen(str);
-      printf("%s ---- %d\n", str, init_size);
-  }
-  fclose(fp);
-*/ 
+  printf("%s\n", dir);
   struct dirent *dp;
   DIR *dfd;
-
-  char *dir = argv[1];
-
-  printf("Entering main controller\n");
-
-  printf("Constructor\n");
-
-  // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
-  if (__PREFIX(CNN_Construct)())
-  {
-    printf("Graph constructor exited with an error\n");
-    return 1;
-  }
+  int predicted = 0;
+  int result, label;
   char filename_qfd[100];
-  char new_name_qfd[100];
-  int label;
-  int i=0;
-  int predicted=0;
-  int false_positive=0;
-  int num_neg = 0;
-  int num_pos = 0;
-  int false_negative=0;
-  int result;
 
-
-/*--------------------iterate over files in dir------------------------*/
+  /*--------------------iterate over files in dir------------------------*/
   if ((dfd = opendir(dir)) == NULL)
   {
     fprintf(stderr, "Can't open %s\n", dir);
@@ -114,16 +90,20 @@ int main(int argc, char *argv[])
   while ((dp = readdir(dfd)) != NULL){
     struct stat stbuf ;
     sprintf( filename_qfd , "%s/%s" ,dir,dp->d_name);
-    if( stat(filename_qfd,&stbuf ) == -1 ){
-     printf("Unable to stat file: %s\n",filename_qfd) ;
-     continue ;
+    if( stat(filename_qfd, &stbuf) == -1 ){
+      printf("Unable to stat file: %s\n",filename_qfd) ;
+      continue;
     }
 
+    if (!(strcmp(dp->d_name, "."))) continue;
+    if (!(strcmp(dp->d_name, ".."))) continue;
+
     if ( ( stbuf.st_mode & S_IFMT ) == S_IFDIR ){
-     continue;
+      predicted += read_folder(filename_qfd);
      // Skip directories
     } else {
-      label = dp->d_name[strlen(dp->d_name)-5] - '0'; 
+      label = get_label_from_dirname(dir);
+      printf("label = %d\n", label);
       //Reading Image from Bridge
       if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), 0, 0)) {
         printf("Failed to load image %s\n", filename_qfd);
@@ -140,9 +120,9 @@ int main(int argc, char *argv[])
           printf("\n");
       #endif
       /*----------------------Allocate output-----------------------------*/
-      ResOut = (short int *) AT_L2_ALLOC(0, NUM_CLASS*sizeof(short int));
+      ResOut = (short int *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(short int));
       if (ResOut==0) {
-        printf("Failed to allocate Memory for Result (%ld bytes)\n", NUM_CLASS*sizeof(short int));
+        printf("Failed to allocate Memory for Result (%ld bytes)\n", NUM_CLASSES*sizeof(short int));
         return 1;
       }
 
@@ -152,11 +132,31 @@ int main(int argc, char *argv[])
         predicted++;
       } 
     }
-    num_pos += label;
-    num_neg += !label;
-    i++;
+    return predicted;
   }
-  printf("accuracy rate = %.2f%%\n", 100*(float)predicted/(float)i);
+}
+
+int main(int argc, char *argv[]) 
+{
+  if (argc < 2) {
+    printf("Usage: %s [dataset_folder]\n", argv[0]);
+    exit(1);
+  }
+
+  struct dirent *dp;
+  DIR *dfd;
+  char *dir = argv[1];
+
+  printf("Entering main controller\n");
+  printf("Constructor\n");
+
+  // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
+  if (__PREFIX(CNN_Construct)())
+  {
+    printf("Graph constructor exited with an error\n");
+    return 1;
+  }
+  read_folder(dir);
   
   __PREFIX(CNN_Destruct)();
 

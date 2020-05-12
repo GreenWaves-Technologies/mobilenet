@@ -10,7 +10,19 @@ endif
 
 include common.mk
 
-IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
+ifeq ($(AT_INPUT_WIDTH), 224)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_224.ppm
+endif
+ifeq ($(AT_INPUT_WIDTH), 192)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_192.ppm
+endif
+ifeq ($(AT_INPUT_WIDTH), 160)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_160.ppm
+endif
+ifeq ($(AT_INPUT_WIDTH), 128)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
+endif
+
 
 io=host
 
