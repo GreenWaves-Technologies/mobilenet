@@ -40,9 +40,11 @@ AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
 
 
 // Softmax always outputs Q15 short int even from 8 bit input
-L2_MEM short int *ResOut;
-L2_MEM unsigned char imgin_unsigned[AT_INPUT_SIZE];
-L2_MEM signed char *imgin_signed = imgin_unsigned;
+//short int ResOut[NUM_CLASSES];
+signed char ResOut[NUM_CLASSES];
+unsigned char imgin_unsigned[AT_INPUT_SIZE];
+signed char *imgin_signed = imgin_unsigned;
+unsigned int TOTAL_COUNTER = 0;
 
 static int get_label_from_dirname(char *dir_name){
   char *temp;
@@ -52,7 +54,6 @@ static int get_label_from_dirname(char *dir_name){
   }
   for (int i=0; i<NUM_CLASSES; i++){
     if (!(strcmp(ORDERED_SYNSET[i], temp))){
-      printf("%s == %s\n", ORDERED_SYNSET[i], temp);
       return i;
     }
   }
@@ -67,6 +68,7 @@ static int RunNetwork()
   for(int i=0; i<NUM_CLASSES; i++){
     if (ResOut[i] > MaxPrediction){
       outclass = i;
+      MaxPrediction = ResOut[i];
     }
   }
   return outclass;
@@ -74,10 +76,10 @@ static int RunNetwork()
 
 int read_folder(char *dir)
 {
-  printf("%s\n", dir);
   struct dirent *dp;
   DIR *dfd;
   int predicted = 0;
+  int counter = 0;
   int result, label;
   char filename_qfd[100];
 
@@ -87,7 +89,8 @@ int read_folder(char *dir)
     fprintf(stderr, "Can't open %s\n", dir);
     return 0;
   }
-  while ((dp = readdir(dfd)) != NULL){
+  while ((dp = readdir(dfd)) != NULL)
+  {
     struct stat stbuf ;
     sprintf( filename_qfd , "%s/%s" ,dir,dp->d_name);
     if( stat(filename_qfd, &stbuf) == -1 ){
@@ -103,37 +106,26 @@ int read_folder(char *dir)
      // Skip directories
     } else {
       label = get_label_from_dirname(dir);
-      printf("label = %d\n", label);
+      if (!label) continue; //skip 0 class - it's probabily an unrecognized synset
       //Reading Image from Bridge
-      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), 0, 0)) {
-        printf("Failed to load image %s\n", filename_qfd);
-        return 1;
+      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
+        continue;
       }
+      counter++;
       /*--------------------convert to signed in [-128:127]----------------*/
       for(int i=0; i<AT_INPUT_SIZE; i++){
         imgin_signed[i] = (signed char) ( ((int) (imgin_unsigned[i])) - 128);
       }
-      #ifdef PRINT_IMAGE
-        for (int i=0; i<AT_INPUT_SIZE; i++) {
-            printf("%03d, ", __PREFIX(_L2_Memory[i]));
-          }
-          printf("\n");
-      #endif
-      /*----------------------Allocate output-----------------------------*/
-      ResOut = (short int *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(short int));
-      if (ResOut==0) {
-        printf("Failed to allocate Memory for Result (%ld bytes)\n", NUM_CLASSES*sizeof(short int));
-        return 1;
-      }
 
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
-      if (result==label){
-        predicted++;
-      } 
+      //printf("label - %d\tpredicted - %d\n", label, result);
+      predicted += (result==label);
     }
-    return predicted;
   }
+  printf("class %d: %d/%d\n", label, predicted, counter);
+  TOTAL_COUNTER += counter;
+  return predicted;
 }
 
 int main(int argc, char *argv[]) 
@@ -156,8 +148,9 @@ int main(int argc, char *argv[])
     printf("Graph constructor exited with an error\n");
     return 1;
   }
-  read_folder(dir);
-  
+  int TOTAL_PREDICTED = read_folder(dir);
+  printf("well predicted: %d/%d\n", TOTAL_PREDICTED, TOTAL_COUNTER);
+
   __PREFIX(CNN_Destruct)();
 
   printf("Ended\n");

@@ -21,8 +21,8 @@
 #include <fcntl.h>
 
 //#include "mobilenet_v1_0_25_128_quant.h"
-//#include "mobilenet_v2_1_0_224_quant.h"
-#include "mobilenet_v3_large_1_0_224_quant.h"
+#include "mobilenet_v2_1_0_224_quant.h"
+//#include "mobilenet_v3_large_1_0_224_quant.h"
 
 //#include "setup.h"
 #include "ImgIO.h"
@@ -47,22 +47,19 @@
 #define HAVE_LCD
 
 #ifndef HAVE_CAMERA
-	 #define __XSTR(__s) __STR(__s)
-	 #define __STR(__s) #__s 
-
-	#define IMAGE_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT*CAMERA_COLORS)
+	#define __XSTR(__s) __STR(__s)
+	#define __STR(__s) #__s 
+	#define AT_INPUT_SIZE (AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
+#else	
+	#define CAMERA_WIDTH    324
+	#define CAMERA_HEIGHT   244
+	#define AT_INPUT_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT*CAMERA_COLORS)
 #endif
-
 
 #ifdef HAVE_LCD
 	#define LCD_WIDTH    320
 	#define LCD_HEIGHT   240
 #endif
-
-#define CAMERA_WIDTH    324
-#define CAMERA_HEIGHT   244
-
-#define IMAGE_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT)
 
 struct pi_device camera;
 static pi_buffer_t buffer;
@@ -71,12 +68,9 @@ static pi_buffer_t buffer;
 	struct pi_device display;	
 #endif
 
-#define AT_INPUT_SIZE (AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
-
-
-// Softmax always outputs Q15 short int even from 8 bit input
-L2_MEM short int *ResOut;
+#define NUM_CLASSES 1001
+L2_MEM signed char *ResOut;
 L2_MEM unsigned char *imgin_signed;
 L2_MEM unsigned char *imgin_unsigned;
 
@@ -128,8 +122,8 @@ static void RunNetwork()
   gap_cl_resethwtimer();
 #endif
   __PREFIX(CNN)(imgin_signed, ResOut);
-//  printf("Runner completed\n");
-//  printf("\n");
+  printf("Runner completed\n");
+  printf("\n");
 
 }
 
@@ -218,7 +212,7 @@ int body(void)
 
 /*------------------- Allocate Image Buffer ------------------------*/
 	printf("Going to alloc the image buffer!\n");
-	imgin_unsigned = pmsis_l2_malloc(IMAGE_SIZE* sizeof(char));
+	imgin_unsigned = pmsis_l2_malloc(AT_INPUT_SIZE* sizeof(char));
 	if(imgin_unsigned==NULL) {
 	  printf("Image buffer alloc Error!\n");
 	  pmsis_exit(-1);
@@ -260,9 +254,9 @@ int body(void)
 
 
 /*----------------------ALLOCATE THE OUTPUT TENSOR-------------------*/
-	ResOut = (short int *) AT_L2_ALLOC(0, 1001*sizeof(short int));
+	ResOut = (signed char *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(char));
 	if (ResOut==0) {
-		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(short int));
+		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
 		return 1;
 	}
 
@@ -284,7 +278,7 @@ int body(void)
 
 		//OPEN HAVE_CAMERA 
         pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-        pi_camera_capture(&camera, imgin_unsigned, IMAGE_SIZE);
+        pi_camera_capture(&camera, imgin_unsigned, AT_INPUT_SIZE);
         pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
 
 
@@ -305,7 +299,7 @@ int body(void)
   		#endif
 		printf("Reading image from %s\n",ImageName);
 		//Reading Image from Bridge
-		if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), 0, 0)) {
+		if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 1)) {
 			printf("Failed to load image %s\n", ImageName);
 			return 1;
 		}
@@ -333,12 +327,13 @@ int body(void)
 
 
 /*-----------------------CALL THE MAIN FUNCTION----------------------*/
+  //Checki Results
   int outclass, MaxPrediction = 0;
-  for(int i=0; i<1001; i++){
-  	if (ResOut[i] > MaxPrediction){
-  		outclass = i;
-  	}
-  	printf("%d, ", ResOut[i]);
+  for(int i=0; i<NUM_CLASSES; i++){
+    if (ResOut[i] > MaxPrediction){
+      outclass = i;
+      MaxPrediction = ResOut[i];
+    }
   }
   printf("Predicted class: %d\n", outclass);
   printf("With confidence: %d\n", MaxPrediction);
