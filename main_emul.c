@@ -106,16 +106,16 @@ int read_folder(char *dir)
      // Skip directories
     } else {
       label = get_label_from_dirname(dir);
-      if (!label) continue; //skip 0 class - it's probabily an unrecognized synset
+      //if (!label) continue; //skip 0 class - it's probabily an unrecognized synset
       //Reading Image from Bridge
       if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
         continue;
       }
       counter++;
       /*--------------------convert to signed in [-128:127]----------------*/
-      for(int i=0; i<AT_INPUT_SIZE; i++){
+      /*for(int i=0; i<AT_INPUT_SIZE; i++){
         imgin_signed[i] = (signed char) ( ((int) (imgin_unsigned[i])) - 128);
-      }
+      }*/
 
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);

@@ -11,8 +11,21 @@
 #define __IMG_IO_H__
 
 #include "fs_switch.h"
+typedef enum {
+	IMGIO_OUTPUT_CHAR,
+	IMGIO_OUTPUT_SHORT,
+	IMGIO_OUTPUT_RGB565
+} img_io_out_t;
 
-int ReadImageFromFile(char *ImageName, unsigned int DesiredW, unsigned int DesiredH, unsigned int DesiredBytesPerPixel, void *InBuffer, unsigned int BuffSize, int shift, int shorts);
-int WriteImageToFile(char *ImageName, unsigned int W, unsigned int H, unsigned char *InBuffer);
+enum {
+    BYPASS_IO = 0,
+    GRAY_SCALE_IO = 1,
+    RGB565_IO = 2,
+    RGB888_IO = 3
+};
+
+int ReadImageFromFile(char *ImageName, unsigned int DesiredW, unsigned int DesiredH, unsigned int DesiredBytesPerPixel, void *InBuffer, unsigned int BuffSize, img_io_out_t out_type, int Transpose2CHW);
+int WriteImageToFile(char *ImageName, unsigned int W, unsigned int H, unsigned char PixelSize, unsigned char *OutBuffer, unsigned char imgFormat);
+
 #endif //__IMG_IO_H__
 

@@ -71,7 +71,7 @@ static pi_buffer_t buffer;
 
 #define NUM_CLASSES 1001
 L2_MEM signed char *ResOut;
-L2_MEM unsigned char *imgin_signed;
+//L2_MEM unsigned char *imgin_signed;
 L2_MEM unsigned char *imgin_unsigned;
 
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
@@ -121,7 +121,7 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  __PREFIX(CNN)(imgin_signed, ResOut);
+  __PREFIX(CNN)(imgin_unsigned, ResOut);
   printf("Runner completed\n");
   printf("\n");
 
@@ -217,7 +217,7 @@ int body(void)
 	  printf("Image buffer alloc Error!\n");
 	  pmsis_exit(-1);
 	}	
-	imgin_signed = (signed char*) imgin_unsigned;
+	//imgin_signed = (signed char*) imgin_unsigned;
 
 
 
@@ -299,7 +299,7 @@ int body(void)
   		#endif
 		printf("Reading image from %s\n",ImageName);
 		//Reading Image from Bridge
-		if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 1)) {
+		if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
 			printf("Failed to load image %s\n", ImageName);
 			return 1;
 		}
@@ -312,9 +312,9 @@ int body(void)
   	#endif 
 
 	/*--------------------convert to signed in [-128:127]----------------*/
-	for(int i=0; i<AT_INPUT_SIZE; i++){
+	/*for(int i=0; i<AT_INPUT_SIZE; i++){
 		imgin_signed[i] = (signed char) ( ((int) (imgin_unsigned[i])) - 128);
-	}
+	}*/
 
 
 /*-----------------------CALL THE MAIN FUNCTION----------------------*/
