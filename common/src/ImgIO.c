@@ -107,15 +107,15 @@ static int GetInputImageInfos(char *Name, unsigned int *W, unsigned int *H, unsi
 	if (__READ(File, Header, 256) == 256) {
 		unsigned int i;
 		if (ReadPPMHeader(Header, W, H, BytesPerPixel, HeaderSize, 256)) {
-			printf("Unable to load header %s", Name);
+			//printf("Unable to load header %s", Name);
 			Err = 1;
 		} else {
-			printf("Image %s:  [W: %d, H: %d] Bytes per pixel %d, HeaderSize: %d\n", Name, *W, *H, *BytesPerPixel, *HeaderSize);
-			for (i=0; i<*HeaderSize;i++) printf("%c", Header[i]);
-			printf("\n");
+			//printf("Image %s:  [W: %d, H: %d] Bytes per pixel %d, HeaderSize: %d\n", Name, *W, *H, *BytesPerPixel, *HeaderSize);
+			//for (i=0; i<*HeaderSize;i++) printf("%c", Header[i]);
+			//printf("\n");
 		}
 	} else {
-		printf("Unable to read header %s", Name);
+		//printf("Unable to read header %s", Name);
 		Err = 1;
 	}
 	gap_freeL2(Header, 256);
@@ -261,9 +261,9 @@ int ReadImageFromFile(char *ImageName, unsigned int DesiredW, unsigned int Desir
 	switch_fs_t fs;
 	__FS_INIT(fs);
 	File = __OPEN_READ(fs, ImageName);
-	if (File == 0) {
+	/*if (File == 0) {
 		printf("Failed to open file, %s\n", ImageName); goto Fail;
-	}
+	}*/
 
 	Size = W*H*BytesPerPixel;
 	if (out_type == IMGIO_OUTPUT_RGB565) {
@@ -303,13 +303,13 @@ int ReadImageFromFile(char *ImageName, unsigned int DesiredW, unsigned int Desir
 	}
 	__CLOSE(File);
 	__FS_DEINIT(fs);
-	printf("Image %s, [W: %d, H: %d], Bytes per pixel %d, Size: %d bytes, Loaded successfully\n", ImageName, W, H, BytesPerPixel, Size);
+	//printf("Image %s, [W: %d, H: %d], Bytes per pixel %d, Size: %d bytes, Loaded successfully\n", ImageName, W, H, BytesPerPixel, Size);
 
 	return 0;
 Fail:
 	__CLOSE(File);
 	__FS_DEINIT(fs);
-	printf("Failed to load image %s from flash\n", ImageName);
+	//printf("Failed to load image %s from flash\n", ImageName);
 	return 1;
 }
 

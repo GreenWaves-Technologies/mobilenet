@@ -106,7 +106,7 @@ int read_folder(char *dir)
      // Skip directories
     } else {
       label = get_label_from_dirname(dir);
-      //if (!label) continue; //skip 0 class - it's probabily an unrecognized synset
+      if (!label) break; //skip 0 class - it's probabily an unrecognized synset
       //Reading Image from Bridge
       if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
         continue;
@@ -123,7 +123,12 @@ int read_folder(char *dir)
       predicted += (result==label);
     }
   }
-  printf("class %d: %d/%d\n", label, predicted, counter);
+  if (!label) {
+    char *syn = strrchr(dir, '/') + 1;
+    printf("unrecognized synset: %s\n", syn);
+  } else {
+    printf("class %d: %d/%d\n", label, predicted, counter);
+  }
   TOTAL_COUNTER += counter;
   return predicted;
 }
