@@ -42,27 +42,12 @@ AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
 // Softmax always outputs Q15 short int even from 8 bit input
 //short int ResOut[NUM_CLASSES];
 signed char ResOut[NUM_CLASSES];
-unsigned char imgin_unsigned[AT_INPUT_SIZE];
-signed char *imgin_signed = imgin_unsigned;
+unsigned char ImgIn[AT_INPUT_SIZE];
 unsigned int TOTAL_COUNTER = 0;
-
-static int get_label_from_dirname(char *dir_name){
-  char *temp;
-  temp = strrchr(dir_name, '/') + 1;
-  if (temp==NULL){
-    return 0;
-  }
-  for (int i=0; i<NUM_CLASSES; i++){
-    if (!(strcmp(ORDERED_SYNSET[i], temp))){
-      return i;
-    }
-  }
-  return 0;
-}
 
 static int RunNetwork()
 {
-  __PREFIX(CNN)(imgin_signed, ResOut);
+  __PREFIX(CNN)(ImgIn, ResOut);
   //Checki Results
   int outclass, MaxPrediction = 0;
   for(int i=0; i<NUM_CLASSES; i++){
@@ -74,14 +59,14 @@ static int RunNetwork()
   return outclass;
 }
 
-int read_folder(char *dir)
+int read_folder(char *dir, int label)
 {
   struct dirent *dp;
   DIR *dfd;
   int predicted = 0;
   int counter = 0;
-  int result, label;
-  char filename_qfd[100];
+  int result;
+  char filename_qfd[1000];
 
   /*--------------------iterate over files in dir------------------------*/
   if ((dfd = opendir(dir)) == NULL)
@@ -92,43 +77,31 @@ int read_folder(char *dir)
   while ((dp = readdir(dfd)) != NULL)
   {
     struct stat stbuf ;
-    sprintf( filename_qfd , "%s/%s" ,dir,dp->d_name);
+    sprintf(filename_qfd, "%s/%s", dir, dp->d_name);
     if( stat(filename_qfd, &stbuf) == -1 ){
       printf("Unable to stat file: %s\n",filename_qfd) ;
       continue;
     }
 
-    if (!(strcmp(dp->d_name, "."))) continue;
-    if (!(strcmp(dp->d_name, ".."))) continue;
-
     if ( ( stbuf.st_mode & S_IFMT ) == S_IFDIR ){
-      predicted += read_folder(filename_qfd);
+      continue;
      // Skip directories
     } else {
-      label = get_label_from_dirname(dir);
-      if (!label) break; //skip 0 class - it's probabily an unrecognized synset
       //Reading Image from Bridge
-      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
+      if (ReadImageFromFile(filename_qfd, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, ImgIn, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
         continue;
       }
       counter++;
-      /*--------------------convert to signed in [-128:127]----------------*/
-      /*for(int i=0; i<AT_INPUT_SIZE; i++){
-        imgin_signed[i] = (signed char) ( ((int) (imgin_unsigned[i])) - 128);
-      }*/
 
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
+
       //printf("label - %d\tpredicted - %d\n", label, result);
       predicted += (result==label);
     }
   }
-  if (!label) {
-    char *syn = strrchr(dir, '/') + 1;
-    printf("unrecognized synset: %s\n", syn);
-  } else {
-    printf("class %d: %d/%d\n", label, predicted, counter);
-  }
+  printf("class %d: %d/%d\n", label, predicted, counter);
+  if (!counter) printf("%s\n", dir);
   TOTAL_COUNTER += counter;
   return predicted;
 }
@@ -153,7 +126,13 @@ int main(int argc, char *argv[])
     printf("Graph constructor exited with an error\n");
     return 1;
   }
-  int TOTAL_PREDICTED = read_folder(dir);
+  int TOTAL_PREDICTED;
+  char *class_dir[100];
+  for (int i=0; i<NUM_CLASSES; i++)
+  {
+      sprintf(class_dir , "%s/%s" , dir, ORDERED_SYNSET[i]);
+      TOTAL_PREDICTED += read_folder(class_dir, i);
+  }
   printf("well predicted: %d/%d\n", TOTAL_PREDICTED, TOTAL_COUNTER);
 
   __PREFIX(CNN_Destruct)();
