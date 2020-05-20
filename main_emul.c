@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
   char *class_dir[100];
   for (int i=0; i<NUM_CLASSES; i++)
   {
+      printf("%s:\t", ORDERED_SYNSET[i]);
       sprintf(class_dir , "%s/%s" , dir, ORDERED_SYNSET[i]);
       TOTAL_PREDICTED += read_folder(class_dir, i);
   }
