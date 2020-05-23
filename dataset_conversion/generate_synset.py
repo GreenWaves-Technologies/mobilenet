@@ -31,6 +31,7 @@ def create_parser():
 def create_dataset(ordered_synset_dict, args):
 	for i, class_syn in enumerate(ordered_synset_dict.keys()):
 		out_folder = os.path.join(args.converted_dataset_path, class_syn)
+		print(args.new_width,args.new_height)
 		if not os.path.exists(out_folder):
 			os.mkdir(out_folder)
 		counter = 0
@@ -43,7 +44,17 @@ def create_dataset(ordered_synset_dict, args):
 			if os.path.exists(out_filepath):
 				continue
 			img = Image.open(filepath)
-			img = img.resize((args.W, args.H))
+			new_W = int(args.new_width /0.875)
+			new_H = int(args.new_height /0.875)			
+			img = img.resize((new_W, new_H))
+
+			left = (new_W - args.new_width)/2
+			top = (new_H - args.new_height)/2
+			right = (new_W + args.new_width)/2
+			bottom = (new_H + args.new_height)/2
+			# Crop the center of the image
+			img = img.crop((left, top, right, bottom))
+
 			if img.mode == 'L':
 				img = img.convert('RGB')
 			try:
@@ -79,6 +90,7 @@ def main():
 	with open(args.out_header, 'w') as f:
 		f.write(str_out)
 
+	print(args.new_height,args.new_width)
 	print(args.original_dataset_path)
 	if args.create_dataset:
 		create_dataset(ordered_synset_dict, args)
