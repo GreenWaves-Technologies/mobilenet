@@ -46,17 +46,6 @@ def create_dataset(ordered_synset_dict, args):
 			img = Image.open(filepath)
 
 
-#			new_W = int(args.new_width /0.875)
-#			new_H = int(args.new_height /0.875)			
-#			img = img.resize((new_W, new_H))
-#
-#			left = (new_W - args.new_width)/2
-#			top = (new_H - args.new_height)/2
-#			right = (new_W + args.new_width)/2
-#			bottom = (new_H + args.new_height)/2
-#			# Crop the center of the image
-#			img = img.crop((left, top, right, bottom))
-
 			new_WH_crop = args.new_width # FIXME: I consider equal to args.new_height
 			new_WH = int(new_WH_crop /0.875)
 
@@ -68,7 +57,7 @@ def create_dataset(ordered_synset_dict, args):
 			else:
 			    new_H = new_WH
 			    new_W = int(new_WH*orig_W/orig_H)    
-			img = img.resize((new_W, new_H))
+			img = img.resize((new_W, new_H),Image.BILINEAR)
 
 			left = (new_W - new_WH_crop)/2
 			top = (new_H - new_WH_crop)/2

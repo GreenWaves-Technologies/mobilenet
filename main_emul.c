@@ -42,11 +42,10 @@
   #include "mobilenet_v1_0_25_160_quant.h"
 #elif MODEL_ID==15
   #include "mobilenet_v1_0_25_128_quant.h"
+#elif MODEL_ID==16
+  #include "mobilenet_v2_1_0_224_quant.h"
 #endif
-//#include "mobilenet_v1_0_25_128_quant.h"
-//#include "mobilenet_v1_1_0_224_quant.h"
-//#include "mobilenet_v2_1_0_224_quant.h"
-//#include "mobilenet_v3_large_1_0_224_quant.h"
+
 
 #include "ordered_synset.h"
 #include "ImgIO.h"
@@ -76,8 +75,12 @@ AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
 
 
 // Softmax always outputs Q15 short int even from 8 bit input
+#if MODEL_ID==16  // mobilenetv2
+signed char ResOut[NUM_CLASSES];
+#else
 short int ResOut[NUM_CLASSES];
-//signed char ResOut[NUM_CLASSES];
+#endif
+//
 unsigned char ImgIn[AT_INPUT_SIZE];
 unsigned int TOTAL_COUNTER, CURRENT_COUNTER;
 
