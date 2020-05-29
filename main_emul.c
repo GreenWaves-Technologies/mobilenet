@@ -10,8 +10,41 @@
 
 #include <stdio.h>
 
+#if MODEL_ID==0
+  #include "mobilenet_v1_1_0_224_quant.h"
+#elif MODEL_ID==1
+  #include "mobilenet_v1_1_0_192_quant.h"
+#elif MODEL_ID==2
+  #include "mobilenet_v1_1_0_160_quant.h"
+#elif MODEL_ID==3
+  #include "mobilenet_v1_1_0_128_quant.h"
+#elif MODEL_ID==4
+  #include "mobilenet_v1_0_75_224_quant.h"
+#elif MODEL_ID==5
+  #include "mobilenet_v1_0_75_192_quant.h"
+#elif MODEL_ID==6
+  #include "mobilenet_v1_0_75_160_quant.h"
+#elif MODEL_ID==7
+  #include "mobilenet_v1_0_75_128_quant.h"
+#elif MODEL_ID==8
+  #include "mobilenet_v1_0_5_224_quant.h"
+#elif MODEL_ID==9
+  #include "mobilenet_v1_0_5_192_quant.h"
+#elif MODEL_ID==10
+  #include "mobilenet_v1_0_5_160_quant.h"
+#elif MODEL_ID==11
+  #include "mobilenet_v1_0_5_128_quant.h"
+#elif MODEL_ID==12
+  #include "mobilenet_v1_0_25_224_quant.h"
+#elif MODEL_ID==13
+  #include "mobilenet_v1_0_25_192_quant.h"
+#elif MODEL_ID==14
+  #include "mobilenet_v1_0_25_160_quant.h"
+#elif MODEL_ID==15
+  #include "mobilenet_v1_0_25_128_quant.h"
+#endif
 //#include "mobilenet_v1_0_25_128_quant.h"
-#include "mobilenet_v1_1_0_224_quant.h"
+//#include "mobilenet_v1_1_0_224_quant.h"
 //#include "mobilenet_v2_1_0_224_quant.h"
 //#include "mobilenet_v3_large_1_0_224_quant.h"
 
@@ -43,8 +76,8 @@ AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
 
 
 // Softmax always outputs Q15 short int even from 8 bit input
-//short int ResOut[NUM_CLASSES];
-signed char ResOut[NUM_CLASSES];
+short int ResOut[NUM_CLASSES];
+//signed char ResOut[NUM_CLASSES];
 unsigned char ImgIn[AT_INPUT_SIZE];
 unsigned int TOTAL_COUNTER, CURRENT_COUNTER;
 
@@ -57,9 +90,13 @@ struct dirent64
     char d_name[256];   /* We must not include limits.h! */
   };
 
+FILE *fp;
+char filename[100];
+
+
+
 static int RunNetwork()
 {
-  printf("I am here\n");
   __PREFIX(CNN)(ImgIn, ResOut);
   //Checki Results
   int outclass, MaxPrediction = 0;
@@ -107,16 +144,16 @@ int read_folder(char *dir, int label)
         continue;
       }
       counter++;
-      printf("Going to run convolution on %s\n", filename_qfd);
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
-      printf("Inference run OK\n");
 
       //printf("label - %d\tpredicted - %d\n", label, result);
       predicted += (result==label);
     }
   }
   printf("class %d: %d/%d\n", label, predicted, counter);
+  fprintf(fp, "class %d: %d/%d\n", label, predicted, counter);
+
   if (!counter) printf("%s\n", dir);
   TOTAL_COUNTER += counter;
   CURRENT_COUNTER = counter;
@@ -136,6 +173,9 @@ int main(int argc, char *argv[])
 
   printf("Entering main controller\n");
   printf("Constructor\n");
+
+  sprintf(filename, "logs_%d.txt",MODEL_ID);
+  fp = fopen(filename, "w");
 
   // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
   if (__PREFIX(CNN_Construct)())
@@ -161,11 +201,15 @@ int main(int argc, char *argv[])
       avg_perc += class_perc;
   }
 
+  fprintf(fp, "well predicted: %d/%d = %f\n", TOTAL_PREDICTED, TOTAL_COUNTER, (float)TOTAL_PREDICTED/TOTAL_COUNTER );
+  fprintf(fp, "Avergae Precision: %f\n", avg_perc / NUM_CLASSES);
 
   printf("well predicted: %d/%d = %f\n", TOTAL_PREDICTED, TOTAL_COUNTER, (float)TOTAL_PREDICTED/TOTAL_COUNTER );
   printf("Avergae Precision: %f\n", avg_perc / NUM_CLASSES);
 
   __PREFIX(CNN_Destruct)();
+  fclose(fp);
+
 
   printf("Ended\n");
   return 0;
