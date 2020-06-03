@@ -173,15 +173,6 @@ static void RunNetwork()
 
 }
 
-#if defined(__EMUL__)
-int main(int argc, char *argv[]) 
-{
-  if (argc < 2) {
-    printf("Usage: %s [image_file]\n", argv[0]);
-    exit(1);
-  }
-  char *ImageName = argv[1];
-#else
 int body(void)
 {
 /*-----------------voltage-frequency settings-----------------------*/
