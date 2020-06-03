@@ -123,7 +123,12 @@ static pi_buffer_t buffer;
 
 
 #define NUM_CLASSES 1001
-//L2_MEM signed char *ResOut;
+#if MODEL_ID==16  // mobilenetv2
+signed char ResOut[NUM_CLASSES];
+#else
+short int ResOut[NUM_CLASSES];
+#endif
+
 L2_MEM unsigned char *imgin_signed;
 L2_MEM unsigned char *imgin_unsigned;
 
