@@ -21,7 +21,9 @@
 #include <fcntl.h>
 
 //#include "mobilenet_v1_0_25_128_quant.h"
+//#include "mobilenet_v1_0_25_128_quantKernels.h"
 #include "mobilenet_v2_1_0_224_quant.h"
+#include "mobilenet_v2_1_0_224_quantKernels.h"
 //#include "mobilenet_v3_large_1_0_224_quant.h"
 
 //#include "setup.h"

@@ -80,6 +80,7 @@ int read_folder(char *dir, int label)
     sprintf(filename_qfd, "%s/%s", dir, dp->d_name);
     if( stat(filename_qfd, &stbuf) == -1 ){
       printf("Unable to stat file: %s\n",filename_qfd) ;
+      printf("%s \n", strerror(errno));
       continue;
     }
 
@@ -93,7 +94,7 @@ int read_folder(char *dir, int label)
       }
       counter++;
 
-      /*------------------Execute the function "RunNetwork"--------------*/
+      /*------------------Execute the network----------------*/
       result = RunNetwork(NULL);
 
       //printf("label - %d\tpredicted - %d\n", label, result);
@@ -117,16 +118,14 @@ int main(int argc, char *argv[])
   DIR *dfd;
   char *dir = argv[1];
 
-  printf("Entering main controller\n");
   printf("Constructor\n");
-
-  // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
   if (__PREFIX(CNN_Construct)())
   {
     printf("Graph constructor exited with an error\n");
     return 1;
   }
-  int TOTAL_PREDICTED;
+
+  int TOTAL_PREDICTED = 0;
   char *class_dir[100];
   for (int i=0; i<NUM_CLASSES; i++)
   {
