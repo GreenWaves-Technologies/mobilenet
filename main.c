@@ -20,14 +20,67 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-//#include "mobilenet_v1_0_25_128_quant.h"
-#include "mobilenet_v2_1_0_224_quant.h"
-//#include "mobilenet_v3_large_1_0_224_quant.h"
+#if MODEL_ID==0
+	#include "mobilenet_v1_1_0_224_quant.h"
+	#include "mobilenet_v1_1_0_224_quantKernels.h"
+#elif MODEL_ID==1
+	#include "mobilenet_v1_1_0_192_quant.h"
+	#include "mobilenet_v1_1_0_192_quantKernels.h"
+#elif MODEL_ID==2
+	#include "mobilenet_v1_1_0_160_quant.h"
+	#include "mobilenet_v1_1_0_160_quantKernels.h"
+#elif MODEL_ID==3
+	#include "mobilenet_v1_1_0_128_quant.h"
+	#include "mobilenet_v1_1_0_128_quantKernels.h"
+#elif MODEL_ID==4
+	#include "mobilenet_v1_0_75_224_quant.h"
+	#include "mobilenet_v1_0_75_224_quantKernels.h"
+#elif MODEL_ID==5
+	#include "mobilenet_v1_0_75_192_quant.h"
+	#include "mobilenet_v1_0_75_192_quantKernels.h"
+#elif MODEL_ID==6
+	#include "mobilenet_v1_0_75_160_quant.h"
+	#include "mobilenet_v1_0_75_160_quantKernels.h"
+#elif MODEL_ID==7
+	#include "mobilenet_v1_0_75_128_quant.h"
+	#include "mobilenet_v1_0_75_128_quantKernels.h"
+#elif MODEL_ID==8
+	#include "mobilenet_v1_0_5_224_quant.h"
+	#include "mobilenet_v1_0_5_224_quantKernels.h"
+#elif MODEL_ID==9
+	#include "mobilenet_v1_0_5_192_quant.h"
+	#include "mobilenet_v1_0_5_192_quantKernels.h"
+#elif MODEL_ID==10
+	#include "mobilenet_v1_0_5_160_quant.h"
+	#include "mobilenet_v1_0_5_160_quantKernels.h"
+#elif MODEL_ID==11
+	#include "mobilenet_v1_0_5_128_quant.h"
+	#include "mobilenet_v1_0_5_128_quantKernels.h"
+#elif MODEL_ID==12
+	#include "mobilenet_v1_0_25_224_quant.h"
+	#include "mobilenet_v1_0_25_224_quantKernels.h"
+#elif MODEL_ID==13
+	#include "mobilenet_v1_0_25_192_quant.h"
+	#include "mobilenet_v1_0_25_192_quantKernels.h"
+#elif MODEL_ID==14
+	#include "mobilenet_v1_0_25_160_quant.h"
+	#include "mobilenet_v1_0_25_160_quantKernels.h"
+#elif MODEL_ID==15
+	#include "mobilenet_v1_0_25_128_quant.h"
+	#include "mobilenet_v1_0_25_128_quantKernels.h"
+#elif MODEL_ID==16
+	#include "mobilenet_v2_1_0_224_quant.h"
+	#include "mobilenet_v2_1_0_224_quantKernels.h"
+#endif
+
+
 
 //#include "setup.h"
 #include "ImgIO.h"
 //#include "cascade.h"
 //#include "display.h"
+
+#define PERF
 
 #ifdef __EMUL__
  #ifdef PERF
@@ -44,7 +97,7 @@
 #endif
 
 //#define HAVE_CAMERA
-#define HAVE_LCD
+//#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
@@ -70,8 +123,8 @@ static pi_buffer_t buffer;
 
 
 #define NUM_CLASSES 1001
-L2_MEM signed char *ResOut;
-//L2_MEM unsigned char *imgin_signed;
+//L2_MEM signed char *ResOut;
+L2_MEM unsigned char *imgin_signed;
 L2_MEM unsigned char *imgin_unsigned;
 
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
@@ -139,59 +192,9 @@ int main(int argc, char *argv[])
 int body(void)
 {
 /*-----------------voltage-frequency settings-----------------------*/
-	rt_freq_set(RT_FREQ_DOMAIN_FC,50000000);
-	rt_freq_set(RT_FREQ_DOMAIN_CL,150000000);
+	rt_freq_set(RT_FREQ_DOMAIN_FC,250000000);
+	rt_freq_set(RT_FREQ_DOMAIN_CL, 50000000);
 	PMU_set_voltage(1200,0);
-/*------------------------HyperRAM---------------------------*/
-//	printf("Configuring Hyperram..\n");
-//	struct pi_device HyperRam;
-//	struct pi_hyperram_conf hyper_conf;
-//
-//	pi_hyperram_conf_init(&hyper_conf);
-//	pi_open_from_conf(&HyperRam, &hyper_conf);
-//
-//	if (pi_ram_open(&HyperRam))
-//	{
-//	  printf("Error: cannot open Hyperram!\n");
-//	  pmsis_exit(-2);
-//	}
-//
-//	printf("HyperRAM config done\n");
-//
-//	// The hyper chip need to wait a bit.
-//	// TODO: find out need to wait how many times.
-//	pi_time_wait_us(1*1000*1000);
-//
-/*----------------------HyperFlash & FS-----------------------*/
-//	printf("Configuring Hyperflash and FS..\n");
-//	struct pi_device fs;
-//	struct pi_device flash;
-//	struct pi_fs_conf fsconf;
-//	struct pi_hyperflash_conf flash_conf;
-//	pi_fs_conf_init(&fsconf);
-//
-//	pi_hyperflash_conf_init(&flash_conf);
-//	pi_open_from_conf(&flash, &flash_conf);
-//
-//	if (pi_flash_open(&flash))
-//	{
-//	  printf("Error: Flash open failed\n");
-//	  pmsis_exit(-3);
-//	}
-//	fsconf.flash = &flash;
-//
-//	pi_open_from_conf(&fs, &fsconf);
-//
-//	int error = pi_fs_mount(&fs);
-//	if (error)
-//	{
-//	  printf("Error: FS mount failed with error %d\n", error);
-//	  pmsis_exit(-3);
-//	}
-//
-//	printf("FS mounted\n");
-
-
 
 /*-----------------Open Camera  Display-----------------------*/
 #ifdef HAVE_LCD
@@ -217,7 +220,7 @@ int body(void)
 	  printf("Image buffer alloc Error!\n");
 	  pmsis_exit(-1);
 	}	
-	//imgin_signed = (signed char*) imgin_unsigned;
+	else printf("Allocated %d bytes in L2\n",AT_INPUT_SIZE );
 
 
 
