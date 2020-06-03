@@ -260,15 +260,6 @@ int body(void)
 
 #endif //Not Emulator
 
-
-/*----------------------ALLOCATE THE OUTPUT TENSOR-------------------*/
-	ResOut = (signed char *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(char));
-	if (ResOut==0) {
-		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
-		return 1;
-	}
-
-
 /*--------------------CONSTRUCT THE NETWORK-------------------------*/
     printf("Constructor\n");
 	// IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
