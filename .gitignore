@@ -2,3 +2,4 @@ BUILD*
 main_emul
 *.dat
 samples
+tflite_val.json
