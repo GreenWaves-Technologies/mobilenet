@@ -10,49 +10,10 @@
 
 #include <stdio.h>
 
-#if MODEL_ID==0
-  #include "mobilenet_v1_1_0_224_quant.h"
-#elif MODEL_ID==1
-  #include "mobilenet_v1_1_0_192_quant.h"
-#elif MODEL_ID==2
-  #include "mobilenet_v1_1_0_160_quant.h"
-#elif MODEL_ID==3
-  #include "mobilenet_v1_1_0_128_quant.h"
-#elif MODEL_ID==4
-  #include "mobilenet_v1_0_75_224_quant.h"
-#elif MODEL_ID==5
-  #include "mobilenet_v1_0_75_192_quant.h"
-#elif MODEL_ID==6
-  #include "mobilenet_v1_0_75_160_quant.h"
-#elif MODEL_ID==7
-  #include "mobilenet_v1_0_75_128_quant.h"
-#elif MODEL_ID==8
-  #include "mobilenet_v1_0_5_224_quant.h"
-#elif MODEL_ID==9
-  #include "mobilenet_v1_0_5_192_quant.h"
-#elif MODEL_ID==10
-  #include "mobilenet_v1_0_5_160_quant.h"
-#elif MODEL_ID==11
-  #include "mobilenet_v1_0_5_128_quant.h"
-#elif MODEL_ID==12
-  #include "mobilenet_v1_0_25_224_quant.h"
-#elif MODEL_ID==13
-  #include "mobilenet_v1_0_25_192_quant.h"
-#elif MODEL_ID==14
-  #include "mobilenet_v1_0_25_160_quant.h"
-#elif MODEL_ID==15
-  #include "mobilenet_v1_0_25_128_quant.h"
-#elif MODEL_ID==16
-  #include "mobilenet_v2_1_0_224_quant.h"
-#endif
-
+#include "main.h"
 
 #include "ordered_synset.h"
-#include "ImgIO.h"
-
-#include <string.h>
 #include <dirent.h>
-#include <sys/types.h>
 
 #define __XSTR(__s) __STR(__s)
 #define __STR(__s) #__s
@@ -71,8 +32,7 @@
 #define MAXCHAR 1000
 #define NUM_CLASSES 1001
 
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
-
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR;
 
 // Softmax always outputs Q15 short int even from 8 bit input
 #if MODEL_ID==16  // mobilenetv2
@@ -100,7 +60,7 @@ char filename[100];
 
 static int RunNetwork()
 {
-  __PREFIX(CNN)(ImgIn, ResOut);
+  AT_CNN(ImgIn, ResOut);
   //Checki Results
   int outclass, MaxPrediction = 0;
   for(int i=0; i<NUM_CLASSES; i++){
@@ -181,7 +141,7 @@ int main(int argc, char *argv[])
   fp = fopen(filename, "w");
 
   // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
-  if (__PREFIX(CNN_Construct)())
+  if (AT_CONSTRUCT())
   {
     printf("Graph constructor exited with an error\n");
     return 1;
@@ -210,7 +170,7 @@ int main(int argc, char *argv[])
   printf("well predicted: %d/%d = %f\n", TOTAL_PREDICTED, TOTAL_COUNTER, (float)TOTAL_PREDICTED/TOTAL_COUNTER );
   printf("Avergae Precision: %f\n", avg_perc / NUM_CLASSES);
 
-  __PREFIX(CNN_Destruct)();
+  AT_DESTRUCT();
   fclose(fp);
 
 
