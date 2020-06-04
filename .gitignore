@@ -4,3 +4,5 @@ main_emul
 samples
 tflite_val.json
 log*
+*_emul
+!test_gvsoc_emul
