@@ -26,9 +26,8 @@ MODEL_PYTHON=python
 # Increase this to improve accuracy
 TRAINING_EPOCHS?=1
 MODEL_COMMON ?= common
-MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include/gaplib
-MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
-MODEL_HEADERS = $(MODEL_COMMON)/headers
+MODEL_COMMON_INC ?= $(MODEL_COMMON)/src
+MODEL_COMMON_SRC ?= $(MODEL_COMMON)/src
 MODEL_COMMON_SRC_FILES ?= ImgIO.c
 MODEL_COMMON_SRCS = $(realpath $(addprefix $(MODEL_COMMON_SRC)/,$(MODEL_COMMON_SRC_FILES)))
 MODEL_TRAIN = model/train.py

@@ -30,10 +30,61 @@
 #include "bsp/ram/hyperram.h"
 #include "bsp/display/ili9341.h"
 
-#include "main.h"
+#if MODEL_ID==0
+	#include "mobilenet_v1_1_0_224_quant.h"
+	#include "mobilenet_v1_1_0_224_quantKernels.h"
+#elif MODEL_ID==1
+	#include "mobilenet_v1_1_0_192_quant.h"
+	#include "mobilenet_v1_1_0_192_quantKernels.h"
+#elif MODEL_ID==2
+	#include "mobilenet_v1_1_0_160_quant.h"
+	#include "mobilenet_v1_1_0_160_quantKernels.h"
+#elif MODEL_ID==3
+	#include "mobilenet_v1_1_0_128_quant.h"
+	#include "mobilenet_v1_1_0_128_quantKernels.h"
+#elif MODEL_ID==4
+	#include "mobilenet_v1_0_75_224_quant.h"
+	#include "mobilenet_v1_0_75_224_quantKernels.h"
+#elif MODEL_ID==5
+	#include "mobilenet_v1_0_75_192_quant.h"
+	#include "mobilenet_v1_0_75_192_quantKernels.h"
+#elif MODEL_ID==6
+	#include "mobilenet_v1_0_75_160_quant.h"
+	#include "mobilenet_v1_0_75_160_quantKernels.h"
+#elif MODEL_ID==7
+	#include "mobilenet_v1_0_75_128_quant.h"
+	#include "mobilenet_v1_0_75_128_quantKernels.h"
+#elif MODEL_ID==8
+	#include "mobilenet_v1_0_5_224_quant.h"
+	#include "mobilenet_v1_0_5_224_quantKernels.h"
+#elif MODEL_ID==9
+	#include "mobilenet_v1_0_5_192_quant.h"
+	#include "mobilenet_v1_0_5_192_quantKernels.h"
+#elif MODEL_ID==10
+	#include "mobilenet_v1_0_5_160_quant.h"
+	#include "mobilenet_v1_0_5_160_quantKernels.h"
+#elif MODEL_ID==11
+	#include "mobilenet_v1_0_5_128_quant.h"
+	#include "mobilenet_v1_0_5_128_quantKernels.h"
+#elif MODEL_ID==12
+	#include "mobilenet_v1_0_25_224_quant.h"
+	#include "mobilenet_v1_0_25_224_quantKernels.h"
+#elif MODEL_ID==13
+	#include "mobilenet_v1_0_25_192_quant.h"
+	#include "mobilenet_v1_0_25_192_quantKernels.h"
+#elif MODEL_ID==14
+	#include "mobilenet_v1_0_25_160_quant.h"
+	#include "mobilenet_v1_0_25_160_quantKernels.h"
+#elif MODEL_ID==15
+	#include "mobilenet_v1_0_25_128_quant.h"
+	#include "mobilenet_v1_0_25_128_quantKernels.h"
+#elif MODEL_ID==16
+	#include "mobilenet_v2_1_0_224_quant.h"
+	#include "mobilenet_v2_1_0_224_quantKernels.h"
+#endif
 
 //#define HAVE_CAMERA
-//#define HAVE_LCD
+#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
@@ -69,7 +120,7 @@ L2_MEM NETWORK_OUT_TYPE *ResOut;
 struct pi_device HyperRam;
 static uint32_t l3_buff;
 
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_FLASH_ADDR = 0;
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
 
 #ifdef PERF
 L2_MEM rt_perf_t *cluster_perf;
@@ -116,7 +167,7 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  AT_CNN(l3_buff, ResOut);
+  __PREFIX(CNN)(l3_buff, ResOut);
   printf("Runner completed\n");
   printf("\n");
 
@@ -249,7 +300,7 @@ int body(void)
 
     printf("Constructor\n");
 	// IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
-	if (AT_CONSTRUCT())
+	if (__PREFIX(CNN_Construct)())
 	{
 	  printf("Graph constructor exited with an error\n");
 	  return 1;
@@ -290,7 +341,7 @@ int body(void)
 #endif
 
 /*-----------------------Desctruct the AT model----------------------*/
-	AT_DESTRUCT();
+	__PREFIX(CNN_Destruct)();
 	pmsis_exit(0);
 	printf("Ended\n");
 	return 0;
