@@ -84,17 +84,17 @@
 #endif
 
 //#define HAVE_CAMERA
-//#define HAVE_LCD
+#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
 	#define __STR(__s) #__s 
-	#define AT_INPUT_SIZE (AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 #else	
 	#define CAMERA_WIDTH    324
 	#define CAMERA_HEIGHT   244
-	#define AT_INPUT_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT*CAMERA_COLORS)
+	#define CAMERA_SIZE		(CAMERA_WIDTH*CAMERA_HEIGHT)
 #endif
+#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
 #ifdef HAVE_LCD
 	#define LCD_WIDTH    320
@@ -177,10 +177,10 @@ int body(void)
 {
 /*-----------------voltage-frequency settings-----------------------*/
 	rt_freq_set(RT_FREQ_DOMAIN_FC,250000000);
-	rt_freq_set(RT_FREQ_DOMAIN_CL,175000000);
+	rt_freq_set(RT_FREQ_DOMAIN_CL,50000000);
 	//PMU_set_voltage(1200,0);
 
-/*---------------------- Init & open ram -------------------------- */
+/*---------------------- Init & open ram --------------------------*/
   struct pi_hyperram_conf hyper_conf;
   pi_hyperram_conf_init(&hyper_conf);
   pi_open_from_conf(&HyperRam, &hyper_conf);
@@ -196,7 +196,7 @@ int body(void)
     pmsis_exit(-4);
   }
 
-/*-----------------Open Camera  Display-----------------------*/
+/*----------------------Open Camera  Display-----------------------*/
 #ifdef HAVE_LCD
 	if (open_display(&display))
 	{
@@ -205,9 +205,9 @@ int body(void)
 	}
 #endif
 /*-------------------reading input data-----------------------------*/
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_SIZE*sizeof(char));
-
 #ifdef HAVE_CAMERA
+	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*sizeof(char));
+
 	if (open_camera_himax(&camera))
 	{
 	printf("Failed to open camera\n");
@@ -215,7 +215,7 @@ int body(void)
 	}
 	//OPEN HAVE_CAMERA 
     pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-    pi_camera_capture(&camera, Input_1, AT_INPUT_SIZE);
+    pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
     pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
 
     // crop [AT_INPUT_HEIGHT x AT_INPUT_WIDTH]
@@ -223,12 +223,14 @@ int body(void)
     for(int i =0;i<CAMERA_HEIGHT;i++){
     	for(int j=0;j<CAMERA_WIDTH;j++){
     		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
+    			Input_1[ps] = Input_1[i*AT_INPUT_WIDTH+j];
     			ps++;        			
     		}
     	}
     } 	
 #else
+	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_SIZE*sizeof(char));
+
 	char *ImageName = __XSTR(AT_IMAGE);
 	printf("Reading image from %s\n",ImageName);
 	//Reading Image from Bridge
@@ -241,22 +243,32 @@ int body(void)
 	printf("Finished reading image %s\n", ImageName);
 #endif //HAVE_CAMERA
 
-/*----------------------- Copy Image to RAM ------------------------*/
-	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
-	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
-
+#ifdef HAVE_LCD
 /*------------------- Config Buffer for LCD Display ----------------*/
-	buffer.data = l3_buff;//+AT_INPUT_WIDTH*2+2;
+	buffer.data = Input_1;//+AT_INPUT_WIDTH*2+2;
 	buffer.stride = 0;
 
 	// WIth Himax, propertly configure the buffer to skip boarder pixels
-	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, l3_buff);//+AT_INPUT_WIDTH*2+2);
+	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, Input_1);//+AT_INPUT_WIDTH*2+2);
 	pi_buffer_set_stride(&buffer, 0);
 	pi_buffer_set_format(&buffer, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, PI_BUFFER_FORMAT_GRAY);
 
-#ifdef HAVE_LCD
 	pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
 #endif 
+
+/*----------------------- Copy Image to RAM ------------------------*/
+#ifdef HAVE_CAMERA
+	// CH0
+	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	// CH1
+	pi_ram_write(&HyperRam, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	//CH2
+	pi_ram_write(&HyperRam, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	pmsis_l2_malloc_free(Input_1, AT_INPUT_WIDTH*AT_INPUT_HEIGHT*sizeof(char));
+#else
+	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
+	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
+#endif
 
 /*-------------------OPEN THE CLUSTER-------------------------------*/
 	struct pi_device cluster_dev;
