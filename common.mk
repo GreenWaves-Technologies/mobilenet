@@ -130,7 +130,7 @@ ifeq ($(MODEL_ID), 16)
 endif
 
 ifeq ($(MODEL_ID), 17)
-	MODEL_PREFIX?=mobilenet_v3_large_1_0_224_quant
+	MODEL_PREFIX?=mobilenet_v3_large_minimalistic_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
