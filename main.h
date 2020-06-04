@@ -52,6 +52,9 @@
 #elif MODEL_ID==16
 	#include "mobilenet_v2_1_0_224_quant.h"
 	#include "mobilenet_v2_1_0_224_quantKernels.h"
+#elif MODEL_ID==17
+	#include "mobilenet_v3_large_1_0_224_quant.h"
+	#include "mobilenet_v3_large_1_0_224_quantKernels.h"
 #endif
 
 #include "Gap.h"
