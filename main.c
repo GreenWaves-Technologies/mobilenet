@@ -197,8 +197,9 @@ int main(int argc, char *argv[])
 int body(void)
 {
 /*-----------------voltage-frequency settings-----------------------*/
-	rt_freq_set(RT_FREQ_DOMAIN_FC,250000000);
-	rt_freq_set(RT_FREQ_DOMAIN_CL, 50000000);
+	printf("Going to set FC Freq = %d and CL Freq = %d\n",FREQ_FC, FREQ_CL);
+	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC);
+	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL);
 	PMU_set_voltage(1200,0);
 
 /*-----------------Open Camera  Display-----------------------*/
