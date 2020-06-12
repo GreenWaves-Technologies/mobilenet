@@ -15,6 +15,7 @@ ifeq ($(MODEL_ID), 0)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 1)
@@ -22,6 +23,7 @@ ifeq ($(MODEL_ID), 1)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 2)
@@ -29,6 +31,7 @@ ifeq ($(MODEL_ID), 2)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 3)
@@ -36,6 +39,7 @@ ifeq ($(MODEL_ID), 3)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 4)
@@ -43,6 +47,7 @@ ifeq ($(MODEL_ID), 4)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 5)
@@ -50,6 +55,7 @@ ifeq ($(MODEL_ID), 5)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 6)
@@ -57,6 +63,7 @@ ifeq ($(MODEL_ID), 6)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 7)
@@ -64,6 +71,7 @@ ifeq ($(MODEL_ID), 7)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 8)
@@ -71,6 +79,7 @@ ifeq ($(MODEL_ID), 8)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 9)
@@ -78,6 +87,7 @@ ifeq ($(MODEL_ID), 9)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 10)
@@ -85,6 +95,7 @@ ifeq ($(MODEL_ID), 10)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 11)
@@ -92,6 +103,7 @@ ifeq ($(MODEL_ID), 11)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 12)
@@ -99,6 +111,7 @@ ifeq ($(MODEL_ID), 12)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 13)
@@ -106,6 +119,7 @@ ifeq ($(MODEL_ID), 13)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 14)
@@ -113,6 +127,7 @@ ifeq ($(MODEL_ID), 14)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 15)
@@ -120,6 +135,7 @@ ifeq ($(MODEL_ID), 15)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 16)
@@ -127,6 +143,7 @@ ifeq ($(MODEL_ID), 16)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script_mbv2
 endif
 
 ifeq ($(MODEL_ID), 17)
@@ -134,6 +151,7 @@ ifeq ($(MODEL_ID), 17)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script
 endif
 
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct

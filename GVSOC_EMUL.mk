@@ -31,4 +31,7 @@ check: $(EMUL) $(GVSOC)
 	python3 $(TEST_DIR)/parseout.py $^ $(MODEL_PREFIX) $(TEST_DIR)/out.txt
 
 clean:
+	rm $(TEST_DIR)/$(MODEL_PREFIX)*.txt
+
+clean_all:
 	rm $(TEST_DIR)/*.txt

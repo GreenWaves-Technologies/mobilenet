@@ -128,7 +128,7 @@ int body(void)
 	printf("Going to set FC Freq = %d and CL Freq = %d\n",FREQ_FC, FREQ_CL);
 	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC);
 	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL);
-	PMU_set_voltage(1200,0);
+	//PMU_set_voltage(1200,0);
 
 /*---------------------- Init & open ram --------------------------*/
   struct pi_hyperram_conf hyper_conf;
