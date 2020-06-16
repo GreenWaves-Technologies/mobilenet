@@ -31,8 +31,8 @@
 
 #include "main.h"
 
-#define HAVE_CAMERA
-#define HAVE_LCD
+//#define HAVE_CAMERA
+//#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
