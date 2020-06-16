@@ -31,8 +31,8 @@
 
 #include "main.h"
 
-//#define HAVE_CAMERA
-//#define HAVE_LCD
+#define HAVE_CAMERA
+#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
@@ -41,6 +41,7 @@
 #else	
 	#define CAMERA_WIDTH    324
 	#define CAMERA_HEIGHT   244
+	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
 
 #endif
 #define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
@@ -156,12 +157,17 @@ int body(void)
 #endif
 /*-------------------reading input data-----------------------------*/
 #ifdef HAVE_CAMERA
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*sizeof(char));
+	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));
+	if(!Input_1){
+		printf("Failed allocation!\n");
+		pmsis_exit(1);
+	}
+
 
 	if (open_camera_himax(&camera))
 	{
-	printf("Failed to open camera\n");
-	pmsis_exit(-2);
+		printf("Failed to open camera\n");
+		pmsis_exit(-2);
 	}
 	//OPEN HAVE_CAMERA 
     pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
@@ -173,7 +179,7 @@ int body(void)
     for(int i =0;i<CAMERA_HEIGHT;i++){
     	for(int j=0;j<CAMERA_WIDTH;j++){
     		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-    			Input_1[ps] = Input_1[i*AT_INPUT_WIDTH+j];
+    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
     			ps++;        			
     		}
     	}
@@ -214,7 +220,7 @@ int body(void)
 	pi_ram_write(&HyperRam, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
 	//CH2
 	pi_ram_write(&HyperRam, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pmsis_l2_malloc_free(Input_1, AT_INPUT_WIDTH*AT_INPUT_HEIGHT*sizeof(char));
+	pmsis_l2_malloc_free(Input_1, CAMERA_SIZE*sizeof(char));
 #else
 	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
 	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
@@ -301,7 +307,7 @@ int body(void)
 
 int main(void)
 {
-    printf("\n\n\t *** IMAGENET ***\n\n");
+    printf("\n\n\t *** IMAGENET on GAP ***\n\n");
     return pmsis_kickoff((void *) body);
 }
 
