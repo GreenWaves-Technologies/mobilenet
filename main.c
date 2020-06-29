@@ -20,43 +20,32 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-//#include "mobilenet_v1_0_25_128_quant.h"
-//#include "mobilenet_v1_0_25_128_quantKernels.h"
-#include "mobilenet_v2_1_0_224_quant.h"
-#include "mobilenet_v2_1_0_224_quantKernels.h"
-//#include "mobilenet_v3_large_1_0_224_quant.h"
 
-//#include "setup.h"
-#include "ImgIO.h"
-//#include "cascade.h"
-//#include "display.h"
+#include "pmsis.h"
+#include "bsp/flash/hyperflash.h"
+#include "bsp/bsp.h"
+#include "bsp/buffer.h"
+#include "bsp/camera/himax.h"
+#include "bsp/ram.h"
+#include "bsp/ram/hyperram.h"
+#include "bsp/display/ili9341.h"
 
-#ifdef __EMUL__
- #ifdef PERF
-  #undef PERF
- #endif
-#else
- #include "pmsis.h"
- #include "bsp/flash/hyperflash.h"
- #include "bsp/bsp.h"
- #include "bsp/buffer.h"
- #include "bsp/camera/himax.h"
- #include "bsp/ram/hyperram.h"
- #include "bsp/display/ili9341.h"
-#endif
+#include "main.h"
 
 //#define HAVE_CAMERA
-#define HAVE_LCD
+//#define HAVE_LCD
 
 #ifndef HAVE_CAMERA
 	#define __XSTR(__s) __STR(__s)
 	#define __STR(__s) #__s 
-	#define AT_INPUT_SIZE (AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
+
 #else	
 	#define CAMERA_WIDTH    324
 	#define CAMERA_HEIGHT   244
-	#define AT_INPUT_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT*CAMERA_COLORS)
+	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
+
 #endif
+#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
 #ifdef HAVE_LCD
 	#define LCD_WIDTH    320
@@ -70,13 +59,19 @@ static pi_buffer_t buffer;
 	struct pi_device display;	
 #endif
 
+#if MODEL_ID==16
+	typedef signed char NETWORK_OUT_TYPE;
+#else
+	typedef signed short int NETWORK_OUT_TYPE;
+#endif
 
 #define NUM_CLASSES 1001
-L2_MEM signed char *ResOut;
-//L2_MEM unsigned char *imgin_signed;
-L2_MEM unsigned char *imgin_unsigned;
+L2_MEM NETWORK_OUT_TYPE *ResOut;
 
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
+struct pi_device HyperRam;
+static uint32_t l3_buff;
+
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
 #ifdef PERF
 L2_MEM rt_perf_t *cluster_perf;
@@ -123,79 +118,37 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  __PREFIX(CNN)(imgin_unsigned, ResOut);
+  AT_CNN(l3_buff, ResOut);
   printf("Runner completed\n");
   printf("\n");
 
 }
 
-#if defined(__EMUL__)
-int main(int argc, char *argv[]) 
-{
-  if (argc < 2) {
-    printf("Usage: %s [image_file]\n", argv[0]);
-    exit(1);
-  }
-  char *ImageName = argv[1];
-#else
 int body(void)
 {
 /*-----------------voltage-frequency settings-----------------------*/
-	rt_freq_set(RT_FREQ_DOMAIN_FC,50000000);
-	rt_freq_set(RT_FREQ_DOMAIN_CL,150000000);
-	PMU_set_voltage(1200,0);
-/*------------------------HyperRAM---------------------------*/
-//	printf("Configuring Hyperram..\n");
-//	struct pi_device HyperRam;
-//	struct pi_hyperram_conf hyper_conf;
-//
-//	pi_hyperram_conf_init(&hyper_conf);
-//	pi_open_from_conf(&HyperRam, &hyper_conf);
-//
-//	if (pi_ram_open(&HyperRam))
-//	{
-//	  printf("Error: cannot open Hyperram!\n");
-//	  pmsis_exit(-2);
-//	}
-//
-//	printf("HyperRAM config done\n");
-//
-//	// The hyper chip need to wait a bit.
-//	// TODO: find out need to wait how many times.
-//	pi_time_wait_us(1*1000*1000);
-//
-/*----------------------HyperFlash & FS-----------------------*/
-//	printf("Configuring Hyperflash and FS..\n");
-//	struct pi_device fs;
-//	struct pi_device flash;
-//	struct pi_fs_conf fsconf;
-//	struct pi_hyperflash_conf flash_conf;
-//	pi_fs_conf_init(&fsconf);
-//
-//	pi_hyperflash_conf_init(&flash_conf);
-//	pi_open_from_conf(&flash, &flash_conf);
-//
-//	if (pi_flash_open(&flash))
-//	{
-//	  printf("Error: Flash open failed\n");
-//	  pmsis_exit(-3);
-//	}
-//	fsconf.flash = &flash;
-//
-//	pi_open_from_conf(&fs, &fsconf);
-//
-//	int error = pi_fs_mount(&fs);
-//	if (error)
-//	{
-//	  printf("Error: FS mount failed with error %d\n", error);
-//	  pmsis_exit(-3);
-//	}
-//
-//	printf("FS mounted\n");
+	printf("Going to set FC Freq = %d and CL Freq = %d\n",FREQ_FC, FREQ_CL);
+	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC);
+	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL);
+	//PMU_set_voltage(1200,0);
 
+/*---------------------- Init & open ram --------------------------*/
+  struct pi_hyperram_conf hyper_conf;
+  pi_hyperram_conf_init(&hyper_conf);
+  pi_open_from_conf(&HyperRam, &hyper_conf);
+  if (pi_ram_open(&HyperRam))
+  {
+    printf("Error ram open !\n");
+    pmsis_exit(-3);
+  }
 
+  if (pi_ram_alloc(&HyperRam, &l3_buff, (uint32_t) AT_INPUT_SIZE))
+  {
+    printf("Ram malloc failed !\n");
+    pmsis_exit(-4);
+  }
 
-/*-----------------Open Camera  Display-----------------------*/
+/*----------------------Open Camera  Display-----------------------*/
 #ifdef HAVE_LCD
 	if (open_display(&display))
 	{
@@ -203,34 +156,76 @@ int body(void)
 	pmsis_exit(-1);
 	}
 #endif
-
+/*-------------------reading input data-----------------------------*/
 #ifdef HAVE_CAMERA
+	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));
+	if(!Input_1){
+		printf("Failed allocation!\n");
+		pmsis_exit(1);
+	}
+
+
 	if (open_camera_himax(&camera))
 	{
-	printf("Failed to open camera\n");
-	pmsis_exit(-2);
+		printf("Failed to open camera\n");
+		pmsis_exit(-2);
 	}
-#endif
+	//OPEN HAVE_CAMERA 
+    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
+    pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
+    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
 
-/*------------------- Allocate Image Buffer ------------------------*/
-	printf("Going to alloc the image buffer!\n");
-	imgin_unsigned = pmsis_l2_malloc(AT_INPUT_SIZE* sizeof(char));
-	if(imgin_unsigned==NULL) {
-	  printf("Image buffer alloc Error!\n");
-	  pmsis_exit(-1);
-	}	
-	//imgin_signed = (signed char*) imgin_unsigned;
+    // crop [AT_INPUT_HEIGHT x AT_INPUT_WIDTH]
+    int ps=0;
+    for(int i =0;i<CAMERA_HEIGHT;i++){
+    	for(int j=0;j<CAMERA_WIDTH;j++){
+    		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
+    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
+    			ps++;        			
+    		}
+    	}
+    } 	
+#else
+	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_SIZE*sizeof(char));
 
+	char *ImageName = __XSTR(AT_IMAGE);
+	printf("Reading image from %s\n",ImageName);
+	//Reading Image from Bridge
+	img_io_out_t type = IMGIO_OUTPUT_CHAR;
+	
+	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, 0)) {
+		printf("Failed to load image %s\n", ImageName);
+		pmsis_exit(-1);
+	}
+	printf("Finished reading image %s\n", ImageName);
+#endif //HAVE_CAMERA
 
-
+#ifdef HAVE_LCD
 /*------------------- Config Buffer for LCD Display ----------------*/
-	buffer.data = imgin_unsigned;//+AT_INPUT_WIDTH*2+2;
+	buffer.data = Input_1;//+AT_INPUT_WIDTH*2+2;
 	buffer.stride = 0;
 
 	// WIth Himax, propertly configure the buffer to skip boarder pixels
-	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, imgin_unsigned);//+AT_INPUT_WIDTH*2+2);
+	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, Input_1);//+AT_INPUT_WIDTH*2+2);
 	pi_buffer_set_stride(&buffer, 0);
 	pi_buffer_set_format(&buffer, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, PI_BUFFER_FORMAT_GRAY);
+
+	pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
+#endif 
+
+/*----------------------- Copy Image to RAM ------------------------*/
+#ifdef HAVE_CAMERA
+	// CH0
+	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	// CH1
+	pi_ram_write(&HyperRam, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	//CH2
+	pi_ram_write(&HyperRam, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	pmsis_l2_malloc_free(Input_1, CAMERA_SIZE*sizeof(char));
+#else
+	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
+	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
+#endif
 
 /*-------------------OPEN THE CLUSTER-------------------------------*/
 	struct pi_device cluster_dev;
@@ -252,80 +247,27 @@ int body(void)
 	task->slave_stack_size = SLAVE_STACK_SIZE;
 	task->arg = NULL;
 
-#endif //Not Emulator
-
-
-/*----------------------ALLOCATE THE OUTPUT TENSOR-------------------*/
-	ResOut = (signed char *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(char));
+/*--------------------CONSTRUCT THE NETWORK-------------------------*/
+	/*--------------ALLOCATE THE OUTPUT TENSOR---------*/
+	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	if (ResOut==0) {
 		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
 		return 1;
 	}
 
-
-/*--------------------CONSTRUCT THE NETWORK-------------------------*/
     printf("Constructor\n");
 	// IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
-	if (__PREFIX(CNN_Construct)())
+	if (AT_CONSTRUCT())
 	{
 	  printf("Graph constructor exited with an error\n");
 	  return 1;
 	}
 	printf("Constructor was OK!\n");
 
-/*-------------------reading input data-----------------------------*/
-
-
-    #ifdef HAVE_CAMERA
-
-		//OPEN HAVE_CAMERA 
-        pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-        pi_camera_capture(&camera, imgin_unsigned, AT_INPUT_SIZE);
-        pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
-
-
-        // crop [AT_INPUT_HEIGHT x AT_INPUT_WIDTH]
-        int ps=0;
-        for(int i =0;i<CAMERA_HEIGHT;i++){
-        	for(int j=0;j<CAMERA_WIDTH;j++){
-        		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-        			imgin_unsigned[ps] = imgin_unsigned[i*CAMERA_WIDTH+j];
-        			ps++;        			
-        		}
-        	}
-        }
-	  	
-	#else
-        #ifndef __EMUL__
-  			char *ImageName = __XSTR(AT_IMAGE);
-  		#endif
-		printf("Reading image from %s\n",ImageName);
-		//Reading Image from Bridge
-		if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, imgin_unsigned, AT_INPUT_SIZE*sizeof(unsigned char), IMGIO_OUTPUT_CHAR, 0)) {
-			printf("Failed to load image %s\n", ImageName);
-			return 1;
-		}
-		printf("Finished reading image %s\n", ImageName);
-
-	#endif
-
-  	#ifdef HAVE_LCD
-  		pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
-  	#endif 
-
-	/*--------------------convert to signed in [-128:127]----------------*/
-	/*for(int i=0; i<AT_INPUT_SIZE; i++){
-		imgin_signed[i] = (signed char) ( ((int) (imgin_unsigned[i])) - 128);
-	}*/
-
-
 /*-----------------------CALL THE MAIN FUNCTION----------------------*/
 //	printf("Call cluster\n");
-#ifdef __EMUL__
-	RunNetwork(NULL);
-#else
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
-#endif
+
 
 
 /*-----------------------CALL THE MAIN FUNCTION----------------------*/
@@ -356,26 +298,17 @@ int body(void)
 	}
 #endif
 
-#ifdef HAVE_CAMERA
-#endif
-
-	/*-----------------------Desctruct the AT model----------------------*/
-		__PREFIX(CNN_Destruct)();
-
-
-#ifndef __EMUL__
+/*-----------------------Desctruct the AT model----------------------*/
+	AT_DESTRUCT();
 	pmsis_exit(0);
-#endif
-	
 	printf("Ended\n");
-	
 	return 0;
 }
 
-#ifndef __EMUL__
+
 int main(void)
 {
-    printf("\n\n\t *** IMAGENET ***\n\n");
+    printf("\n\n\t *** IMAGENET on GAP ***\n\n");
     return pmsis_kickoff((void *) body);
 }
-#endif
+

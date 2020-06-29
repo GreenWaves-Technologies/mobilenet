@@ -6,17 +6,13 @@
  * of the BSD license.  See the LICENSE file for details.
  *
  */
+#define _FILE_OFFSET_BITS 64
 
 #include <stdio.h>
 
-//#include "mobilenet_v1_0_25_128_quant.h"
-#include "mobilenet_v2_1_0_224_quant.h"
-//#include "mobilenet_v3_large_1_0_224_quant.h"
+#include "main.h"
 
 #include "ordered_synset.h"
-#include "ImgIO.h"
-
-#include <string.h>
 #include <dirent.h>
 
 #define __XSTR(__s) __STR(__s)
@@ -36,18 +32,35 @@
 #define MAXCHAR 1000
 #define NUM_CLASSES 1001
 
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash);
-
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR;
 
 // Softmax always outputs Q15 short int even from 8 bit input
-//short int ResOut[NUM_CLASSES];
+#if MODEL_ID==16  // mobilenetv2
 signed char ResOut[NUM_CLASSES];
+#else
+short int ResOut[NUM_CLASSES];
+#endif
+//
 unsigned char ImgIn[AT_INPUT_SIZE];
-unsigned int TOTAL_COUNTER = 0;
+unsigned int TOTAL_COUNTER, CURRENT_COUNTER;
+
+struct dirent64
+  {
+    __ino64_t d_ino;
+    __off64_t d_off;
+    unsigned short int d_reclen;
+    unsigned char d_type;
+    char d_name[256];   /* We must not include limits.h! */
+  };
+
+FILE *fp;
+char filename[100];
+
+
 
 static int RunNetwork()
 {
-  __PREFIX(CNN)(ImgIn, ResOut);
+  AT_CNN(ImgIn, ResOut);
   //Checki Results
   int outclass, MaxPrediction = 0;
   for(int i=0; i<NUM_CLASSES; i++){
@@ -61,7 +74,7 @@ static int RunNetwork()
 
 int read_folder(char *dir, int label)
 {
-  struct dirent *dp;
+  struct dirent64 *dp;
   DIR *dfd;
   int predicted = 0;
   int counter = 0;
@@ -74,11 +87,13 @@ int read_folder(char *dir, int label)
     fprintf(stderr, "Can't open %s\n", dir);
     return 0;
   }
-  while ((dp = readdir(dfd)) != NULL)
+  while ((dp = readdir64(dfd)) != NULL)
   {
     struct stat stbuf ;
     sprintf(filename_qfd, "%s/%s", dir, dp->d_name);
     if( stat(filename_qfd, &stbuf) == -1 ){
+    printf("%s \n", strerror(errno));
+
       printf("Unable to stat file: %s\n",filename_qfd) ;
       printf("%s \n", strerror(errno));
       continue;
@@ -93,8 +108,7 @@ int read_folder(char *dir, int label)
         continue;
       }
       counter++;
-
-      /*------------------Execute the network----------------*/
+      /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
 
       //printf("label - %d\tpredicted - %d\n", label, result);
@@ -102,8 +116,11 @@ int read_folder(char *dir, int label)
     }
   }
   printf("class %d: %d/%d\n", label, predicted, counter);
+  fprintf(fp, "class %d: %d/%d\n", label, predicted, counter);
+
   if (!counter) printf("%s\n", dir);
   TOTAL_COUNTER += counter;
+  CURRENT_COUNTER = counter;
   return predicted;
 }
 
@@ -119,23 +136,43 @@ int main(int argc, char *argv[])
   char *dir = argv[1];
 
   printf("Constructor\n");
-  if (__PREFIX(CNN_Construct)())
+
+  sprintf(filename, "logs_%d.txt",MODEL_ID);
+  fp = fopen(filename, "w");
+
+  // IMPORTANT - MUST BE CALLED AFTER THE CLUSTER IS SWITCHED ON!!!!
+  if (AT_CONSTRUCT())
   {
     printf("Graph constructor exited with an error\n");
     return 1;
   }
-
   int TOTAL_PREDICTED = 0;
+  float avg_perc = 0;
+  float class_perc;
+  int class_predicted;
   char *class_dir[100];
   for (int i=0; i<NUM_CLASSES; i++)
   {
       printf("%s:\t", ORDERED_SYNSET[i]);
       sprintf(class_dir , "%s/%s" , dir, ORDERED_SYNSET[i]);
-      TOTAL_PREDICTED += read_folder(class_dir, i);
+      class_predicted = read_folder(class_dir, i);
+      TOTAL_PREDICTED += class_predicted;
+      if (CURRENT_COUNTER == 0)
+        class_perc = 0;
+      else
+        class_perc = (float) class_predicted / (float) CURRENT_COUNTER;
+      avg_perc += class_perc;
   }
-  printf("well predicted: %d/%d\n", TOTAL_PREDICTED, TOTAL_COUNTER);
 
-  __PREFIX(CNN_Destruct)();
+  fprintf(fp, "well predicted: %d/%d = %f\n", TOTAL_PREDICTED, TOTAL_COUNTER, (float)TOTAL_PREDICTED/TOTAL_COUNTER );
+  fprintf(fp, "Avergae Precision: %f\n", avg_perc / NUM_CLASSES);
+
+  printf("well predicted: %d/%d = %f\n", TOTAL_PREDICTED, TOTAL_COUNTER, (float)TOTAL_PREDICTED/TOTAL_COUNTER );
+  printf("Avergae Precision: %f\n", avg_perc / NUM_CLASSES);
+
+  AT_DESTRUCT();
+  fclose(fp);
+
 
   printf("Ended\n");
   return 0;

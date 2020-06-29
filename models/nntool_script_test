@@ -1,0 +1,5 @@
+adjust
+fusions --scale8
+imageformat input_1 rgb888 offset_int8
+#set graph_dump_tensor 7
+save_state

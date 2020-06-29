@@ -3,3 +3,6 @@ main_emul
 *.dat
 samples
 tflite_val.json
+log*
+*_emul
+!test_gvsoc_emul
