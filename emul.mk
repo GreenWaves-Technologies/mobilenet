@@ -4,6 +4,8 @@
 # This software may be modified and distributed under the terms
 # of the BSD license.  See the LICENSE file for details.
 
+
+NNTOOL_SCRIPT?=models/nntool_script_emul
 include common.mk
 
 QUANT_BITS = 8
@@ -16,7 +18,6 @@ $(info Building emulation mode with 8 bit quantization)
 # the quantization. This is because in 8 bit mode we used signed
 # 8 bit so the input to the model needs to be shifted 1 bit
 
-NNTOOL_SCRIPT?=models/nntool_script_emul
 TRAINED_TFLITE_MODEL=models/$(MODEL_PREFIX).tflite
 
 include common/model_decl.mk
@@ -26,7 +27,8 @@ MAIN ?= main_emul.c
 MODEL_GEN_EXTRA_FLAGS= -f $(MODEL_BUILD)
 MODEL_GENFLAGS_EXTRA+=
 CC = gcc
-CFLAGS += -g -m32 -O3 -D__EMUL__ -DMODEL_ID=$(MODEL_ID) -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS) -DPERF
+OPTIMIZATION?=-O3
+CFLAGS += -g -m32 $(OPTIMIZATION) -D__EMUL__ -DMODEL_ID=$(MODEL_ID) -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS) -DPERF
 CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR)
 INCLUDES = -I. -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_COMMON_INC) -I$(MODEL_HEADERS)
 LFLAGS =

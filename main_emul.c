@@ -35,7 +35,7 @@
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR;
 
 // Softmax always outputs Q15 short int even from 8 bit input
-#if MODEL_ID==16  // mobilenetv2
+#if MODEL_ID==16 // mobilenetv2
 signed char ResOut[NUM_CLASSES];
 #else
 short int ResOut[NUM_CLASSES];

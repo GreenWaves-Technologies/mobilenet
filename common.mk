@@ -154,6 +154,22 @@ ifeq ($(MODEL_ID), 17)
 	NNTOOL_SCRIPT?=models/nntool_script
 endif
 
+ifeq ($(MODEL_ID), 18)
+	MODEL_PREFIX?=mobilenet_v3_large_1_0_224_quant
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script
+endif
+
+ifeq ($(MODEL_ID), 19)
+	MODEL_PREFIX?=mobilenet_v3_large_1_0_224_quant
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_script
+endif
+
 ifeq ($(MODEL_ID), 32)
 	MODEL_PREFIX?=mobilenet_v2_1_4_224_quant
 	AT_INPUT_WIDTH?=224
