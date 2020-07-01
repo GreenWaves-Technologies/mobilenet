@@ -31,7 +31,8 @@ BUILD_DIR=BUILD
 MODEL_SQ8=1
 
 
-FREQ_FC?=150000000
+#For max perfs set 150MhZ for FC, note this is only working for revision C of GAP8
+FREQ_FC?=50000000
 FREQ_CL?=150000000
 
 
