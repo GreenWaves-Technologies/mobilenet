@@ -15,7 +15,7 @@ ifeq ($(MODEL_ID), 0)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 1)
@@ -23,7 +23,7 @@ ifeq ($(MODEL_ID), 1)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 2)
@@ -31,7 +31,7 @@ ifeq ($(MODEL_ID), 2)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 3)
@@ -39,7 +39,7 @@ ifeq ($(MODEL_ID), 3)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 4)
@@ -47,7 +47,7 @@ ifeq ($(MODEL_ID), 4)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 5)
@@ -55,7 +55,7 @@ ifeq ($(MODEL_ID), 5)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 6)
@@ -63,7 +63,7 @@ ifeq ($(MODEL_ID), 6)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 7)
@@ -71,7 +71,7 @@ ifeq ($(MODEL_ID), 7)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 8)
@@ -79,7 +79,7 @@ ifeq ($(MODEL_ID), 8)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 9)
@@ -87,7 +87,7 @@ ifeq ($(MODEL_ID), 9)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 10)
@@ -95,7 +95,7 @@ ifeq ($(MODEL_ID), 10)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 11)
@@ -103,7 +103,7 @@ ifeq ($(MODEL_ID), 11)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 12)
@@ -111,7 +111,7 @@ ifeq ($(MODEL_ID), 12)
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 13)
@@ -119,7 +119,7 @@ ifeq ($(MODEL_ID), 13)
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 14)
@@ -127,7 +127,7 @@ ifeq ($(MODEL_ID), 14)
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 15)
@@ -135,172 +135,146 @@ ifeq ($(MODEL_ID), 15)
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
 endif
 
 ifeq ($(MODEL_ID), 16)
-	MODEL_PREFIX?=mobilenet_v2_1_0_224_quant
-	AT_INPUT_WIDTH?=224
-	AT_INPUT_HEIGHT?=224
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 17)
 	MODEL_PREFIX?=mobilenet_v3_large_minimalistic_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 endif
 
-ifeq ($(MODEL_ID), 18)
-	MODEL_PREFIX?=mobilenet_v3_large_1_0_224_quant
-	AT_INPUT_WIDTH?=224
-	AT_INPUT_HEIGHT?=224
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script
-endif
-
-ifeq ($(MODEL_ID), 19)
-	MODEL_PREFIX?=mobilenet_v3_large_1_0_224_quant
-	AT_INPUT_WIDTH?=224
-	AT_INPUT_HEIGHT?=224
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script
-endif
-
-ifeq ($(MODEL_ID), 32)
+ifeq ($(MODEL_ID), 17)
 	MODEL_PREFIX?=mobilenet_v2_1_4_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 33)
+ifeq ($(MODEL_ID), 18)
 	MODEL_PREFIX?=mobilenet_v2_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 34)
-	MODEL_PREFIX?=mobilenet_v2_0_75_224_quant
-	AT_INPUT_WIDTH?=224
-	AT_INPUT_HEIGHT?=224
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 35)
-	MODEL_PREFIX?=mobilenet_v2_0_5_224_quant
-	AT_INPUT_WIDTH?=224
-	AT_INPUT_HEIGHT?=224
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 36)
+ifeq ($(MODEL_ID), 19)
 	MODEL_PREFIX?=mobilenet_v2_1_0_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 37)
-	MODEL_PREFIX?=mobilenet_v2_0_75_192_quant
-	AT_INPUT_WIDTH?=192
-	AT_INPUT_HEIGHT?=192
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 38)
-	MODEL_PREFIX?=mobilenet_v2_0_5_192_quant
-	AT_INPUT_WIDTH?=192
-	AT_INPUT_HEIGHT?=192
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 39)
+ifeq ($(MODEL_ID), 20)
 	MODEL_PREFIX?=mobilenet_v2_1_0_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 40)
-	MODEL_PREFIX?=mobilenet_v2_0_75_160_quant
-	AT_INPUT_WIDTH?=160
-	AT_INPUT_HEIGHT?=160
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 41)
-	MODEL_PREFIX?=mobilenet_v2_0_5_160_quant
-	AT_INPUT_WIDTH?=160
-	AT_INPUT_HEIGHT?=160
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 42)
+ifeq ($(MODEL_ID), 21)
 	MODEL_PREFIX?=mobilenet_v2_1_0_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 43)
-	MODEL_PREFIX?=mobilenet_v2_0_75_128_quant
-	AT_INPUT_WIDTH?=128
-	AT_INPUT_HEIGHT?=128
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 44)
-	MODEL_PREFIX?=mobilenet_v2_0_5_128_quant
-	AT_INPUT_WIDTH?=128
-	AT_INPUT_HEIGHT?=128
-	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
-endif
-
-ifeq ($(MODEL_ID), 45)
+ifeq ($(MODEL_ID), 22)
 	MODEL_PREFIX?=mobilenet_v2_1_0_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 46)
+ifeq ($(MODEL_ID), 23)
+	MODEL_PREFIX?=mobilenet_v2_0_75_224_quant
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 24)
+	MODEL_PREFIX?=mobilenet_v2_0_75_192_quant
+	AT_INPUT_WIDTH?=192
+	AT_INPUT_HEIGHT?=192
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 25)
+	MODEL_PREFIX?=mobilenet_v2_0_75_160_quant
+	AT_INPUT_WIDTH?=160
+	AT_INPUT_HEIGHT?=160
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 26)
+	MODEL_PREFIX?=mobilenet_v2_0_75_128_quant
+	AT_INPUT_WIDTH?=128
+	AT_INPUT_HEIGHT?=128
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 27)
 	MODEL_PREFIX?=mobilenet_v2_0_75_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-ifeq ($(MODEL_ID), 47)
+ifeq ($(MODEL_ID), 28)
+	MODEL_PREFIX?=mobilenet_v2_0_5_224_quant
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 29)
+	MODEL_PREFIX?=mobilenet_v2_0_5_192_quant
+	AT_INPUT_WIDTH?=192
+	AT_INPUT_HEIGHT?=192
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 30)
+	MODEL_PREFIX?=mobilenet_v2_0_5_160_quant
+	AT_INPUT_WIDTH?=160
+	AT_INPUT_HEIGHT?=160
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 31)
+	MODEL_PREFIX?=mobilenet_v2_0_5_128_quant
+	AT_INPUT_WIDTH?=128
+	AT_INPUT_HEIGHT?=128
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
+endif
+
+ifeq ($(MODEL_ID), 32)
 	MODEL_PREFIX?=mobilenet_v2_0_5_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_script_mbv2
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
 endif
 
-
-
-
+## AT GENERATED NAMES
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
 AT_CNN = $(MODEL_PREFIX)CNN

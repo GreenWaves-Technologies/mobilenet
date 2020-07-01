@@ -1,8 +1,7 @@
 BUILD*
-main_emul
 *.dat
-samples
-tflite_val.json
 log*
-*_emul
-!test_gvsoc_emul
+test_gvsoc_emul
+*.tflite
+validation_on_emul/*_emul
+!mobilenet_v1_1_0_224_quant.tflite

@@ -15,7 +15,7 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-print('Tesnroflow version: ', tf.__version__)
+print('Tensorflow version: ', tf.__version__)
 
 
 def create_parser():

@@ -58,19 +58,14 @@ static pi_buffer_t buffer;
 	struct pi_device display;	
 #endif
 
-#if MODEL_ID==16
-	typedef signed char NETWORK_OUT_TYPE;
-#else
-	typedef signed short int NETWORK_OUT_TYPE;
-#endif
-
-#define NUM_CLASSES 1001
+typedef signed short int NETWORK_OUT_TYPE;
 L2_MEM NETWORK_OUT_TYPE *ResOut;
+#define NUM_CLASSES 1001
 
 struct pi_device HyperRam;
 static uint32_t l3_buff;
 
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
+extern AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
 #ifdef PERF
 L2_MEM rt_perf_t *cluster_perf;

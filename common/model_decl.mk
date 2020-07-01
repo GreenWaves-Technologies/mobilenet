@@ -8,26 +8,13 @@ MODEL_SUFFIX?=
 
 MODEL_PREFIX?=GapFlow
 
-# The training of the model is slightly different depending on
-# the quantization. This is because in 8 bit mode we used signed
-# 8 bit so the input to the model needs to be shifted 1 bit
-ifeq ($(QUANT_BITS),8)
-  TRAIN_SUFFIX=_8BIT
-else
-  ifeq ($(QUANT_BITS),16)
-    TRAIN_SUFFIX=_16BIT
-  else
-    $(error Dont know how to build with this bit width)
-  endif
-endif
-
-MODEL_PYTHON=python
+MODEL_PYTHON=python3
 
 # Increase this to improve accuracy
 TRAINING_EPOCHS?=1
 MODEL_COMMON ?= common
-MODEL_COMMON_INC ?= $(MODEL_COMMON)/src
-MODEL_COMMON_SRC ?= $(MODEL_COMMON)/src
+MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include
+MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
 MODEL_COMMON_SRC_FILES ?= ImgIO.c
 MODEL_COMMON_SRCS = $(realpath $(addprefix $(MODEL_COMMON_SRC)/,$(MODEL_COMMON_SRC_FILES)))
 MODEL_HEADERS = $(MODEL_COMMON)/headers
@@ -52,10 +39,6 @@ MODEL_GENFLAGS_EXTRA =
 
 EXTRA_GENERATOR_SRC =
 
-$(info script $(NNTOOL_SCRIPT))
-ifndef NNTOOL_SCRIPT
-  NNTOOL_SCRIPT=model/nntool_script
-endif
 IMAGES = images
 RM=rm -f
 
@@ -88,10 +71,12 @@ MODEL_LIB_SQ8 += $(TILER_CNN_KERNEL_PATH_SQ8)/CNN_Conv_DW_SQ8.c
 MODEL_LIB_SQ8 += $(TILER_CNN_KERNEL_PATH_SQ8)/CNN_MatAlgebra_SQ8.c
 MODEL_LIB_SQ8 += $(TILER_CNN_KERNEL_PATH_SQ8)/CNN_SoftMax_SQ8.c
 MODEL_LIB_SQ8 += $(TILER_CNN_KERNEL_PATH_SQ8)/CNN_AT_Misc.c
+MODEL_LIB_SQ8 += $(TILER_CNN_KERNEL_PATH_SQ8)/RNN_SQ8.c
 MODEL_LIB_SQ8 += $(NNTOOL_KERNEL_PATH)/norm_transpose.c
 MODEL_LIB_INCLUDE_SQ8 = -I$(TILER_CNN_KERNEL_PATH) -I$(TILER_CNN_KERNEL_PATH_SQ8) -I$(NNTOOL_KERNEL_PATH)
 MODEL_GEN_SQ8 += $(TILER_CNN_GENERATOR_PATH)/CNN_Generator_Util.c
 MODEL_GEN_SQ8 += $(TILER_CNN_GENERATOR_PATH_SQ8)/CNN_Generators_SQ8.c
+MODEL_GEN_SQ8 += $(TILER_CNN_GENERATOR_PATH_SQ8)/RNN_Generators_SQ8.c
 MODEL_GEN_SQ8 += $(NNTOOL_GENERATOR_PATH)/nntool_extra_generators.c
 MODEL_GEN_INCLUDE_SQ8 = -I$(TILER_CNN_GENERATOR_PATH) -I$(TILER_CNN_GENERATOR_PATH_SQ8) -I$(NNTOOL_GENERATOR_PATH)
 
