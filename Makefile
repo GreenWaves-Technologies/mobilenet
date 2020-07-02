@@ -22,6 +22,9 @@ endif
 ifeq ($(AT_INPUT_WIDTH), 128)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
 endif
+ifeq ($(AT_INPUT_WIDTH), 96)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
+endif
 
 io=host
 

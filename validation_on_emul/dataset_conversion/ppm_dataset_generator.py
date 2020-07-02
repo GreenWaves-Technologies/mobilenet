@@ -43,7 +43,28 @@ def create_dataset(ordered_synset_dict, args):
 			if os.path.exists(out_filepath):
 				continue
 			img = Image.open(filepath)
-			img = img.resize((args.W, args.H))
+
+			new_WH_crop = args.new_width # FIXME: I consider equal to args.new_height
+			new_WH = int(new_WH_crop /0.875)
+
+			(orig_W, orig_H) = img.size
+
+			if orig_W < orig_H:
+			    new_W = new_WH
+			    new_H = int(new_WH*orig_H/orig_W)
+			else:
+			    new_H = new_WH
+			    new_W = int(new_WH*orig_W/orig_H)    
+			img = img.resize((new_W, new_H),Image.BILINEAR)
+
+			left = (new_W - new_WH_crop)/2
+			top = (new_H - new_WH_crop)/2
+			right = (new_W + new_WH_crop)/2
+			bottom = (new_H + new_WH_crop)/2
+			# Crop the center of the image
+
+			img = img.crop((left, top, right, bottom))
+
 			if img.mode == 'L':
 				img = img.convert('RGB')
 			try:
@@ -79,8 +100,9 @@ def main():
 	with open(args.out_header, 'w') as f:
 		f.write(str_out)
 
-	print(args.original_dataset_path)
 	if args.create_dataset:
+		print("Resize images to: H={}, W={}".format(args.new_height,args.new_width))
+		print("Saving the converted dataset to: ", args.original_dataset_path)
 		create_dataset(ordered_synset_dict, args)
 
 if __name__ == '__main__':
