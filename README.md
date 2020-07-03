@@ -52,7 +52,7 @@ A Mobilenet TFLite model can be found in the models/tflite_models folder.
 To download other tflite hosted models you can run the script:
 
 	cd models
-	./download_script.sh
+	./download_models.sh
 
 # Requirements
 
