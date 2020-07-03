@@ -36,7 +36,7 @@ MODEL_SQ8=1 # use scale based quantization (tflite-like)
 
 # SET FREQUENCY OF FABRIC CONTROLLER AND CLUSTER
 FREQ_FC?=150000000
-FREQ_CL?=150000000
+FREQ_CL?=50000000
 
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
