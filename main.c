@@ -31,6 +31,9 @@
 #ifdef HAVE_CAMERA 
 	#define HAVE_LCD //uncomment if using LCD 
 #endif
+#ifndef HAVE_CAMERA
+	#undef HAVE_LCD // HAVE_LCD can be set only if HAVE_CAMERA is defined
+#endif
 
 /* Defines */
 #define NUM_CLASSES 	1001

@@ -11,16 +11,23 @@ import argparse
 
 import argcomplete
 import os
-from PIL import Image
+import sys
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 
 print('Tensorflow version: ', tf.__version__)
+
+# Program to test the tflite inference on a single image
+# Example of usage:
+# 	python3 -t tflite_models/mobilenet_v1_1_0_224_quant.tflite \
+#			-i ../images/ILSVRC2012_val_00011158_224.ppm \
+#			-P [to print the output]
 
 
 def create_parser():
 	# create the top-level parser
-	parser = argparse.ArgumentParser(prog='h5_to_tflite')
+	parser = argparse.ArgumentParser(prog='tflite_inference')
 
 	parser.add_argument('-t', '--tflite_model',
 						help="path to tflite model to test")
@@ -60,8 +67,10 @@ def main():
 	interpreter.set_tensor(input_details[0]['index'], input_array)
 	interpreter.invoke()
 	output = interpreter.get_tensor(output_details[0]['index'])
-	print("Class predicted: ", np.argmax(output))
+	print("Class predicted: {} with confidence: {}".format(np.argmax(output), output[0, np.argmax(output)]))
 	if args.print_output:
+		np.set_printoptions(threshold=sys.maxsize)
+		print("Predictions: ")
 		print(output)
 
 if __name__ == '__main__':

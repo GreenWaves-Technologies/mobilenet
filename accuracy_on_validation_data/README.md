@@ -1,8 +1,8 @@
 # Accuracy Validation tool
 
-This section describes the tool which evaluates the deployed networks accuracy over the Imagenet dataset. In the validation_on_emul you will find all you need to do so:
+This section describes the tool which evaluates the deployed networks accuracy over the Imagenet dataset. In the accuracy_on_validation_data you will find all you need to do so:
 
-	cd validation_on_emul
+	cd accuracy_on_validation_data
 
 The \_\_EMUL\_\_ mode is a particular Autotiler setting in which the generated code is compiled to target x86 architectures instead of the GAP RISCV one. In this way you can run the same code which runs on the platform and check the accuracy on a large set of saved images in a very short time (you do not have to flash one by one to the board).
 
