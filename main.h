@@ -33,40 +33,40 @@
 	#include "mobilenet_v1_0_25_160_quantKernels.h"
 #elif MODEL_ID==15
 	#include "mobilenet_v1_0_25_128_quantKernels.h"
-#elif MODEL_ID==17
-	#include "mobilenet_v3_large_minimalistic_1_0_224_quantKernels.h"
-#elif MODEL_ID==32
+#elif MODEL_ID==16
 	#include "mobilenet_v2_1_4_224_quantKernels.h"
-#elif MODEL_ID==33
+#elif MODEL_ID==17
 	#include "mobilenet_v2_1_0_224_quantKernels.h"
-#elif MODEL_ID==34
+#elif MODEL_ID==18
 	#include "mobilenet_v2_1_0_192_quantKernels.h"
-#elif MODEL_ID==35
+#elif MODEL_ID==19
 	#include "mobilenet_v2_1_0_160_quantKernels.h"
-#elif MODEL_ID==36
+#elif MODEL_ID==20
 	#include "mobilenet_v2_1_0_128_quantKernels.h"
-#elif MODEL_ID==37
+#elif MODEL_ID==21
 	#include "mobilenet_v2_1_0_96_quantKernels.h"
-#elif MODEL_ID==38
+#elif MODEL_ID==22
 	#include "mobilenet_v2_0_75_224_quantKernels.h"
-#elif MODEL_ID==39
+#elif MODEL_ID==23
 	#include "mobilenet_v2_0_75_192_quantKernels.h"
-#elif MODEL_ID==40
+#elif MODEL_ID==24
 	#include "mobilenet_v2_0_75_160_quantKernels.h"
-#elif MODEL_ID==41
+#elif MODEL_ID==25
 	#include "mobilenet_v2_0_75_128_quantKernels.h"
-#elif MODEL_ID==42
+#elif MODEL_ID==26
 	#include "mobilenet_v2_0_75_96_quantKernels.h"
-#elif MODEL_ID==43
+#elif MODEL_ID==27
 	#include "mobilenet_v2_0_5_224_quantKernels.h"
-#elif MODEL_ID==44
+#elif MODEL_ID==28
 	#include "mobilenet_v2_0_5_192_quantKernels.h"
-#elif MODEL_ID==45
+#elif MODEL_ID==29
 	#include "mobilenet_v2_0_5_160_quantKernels.h"
-#elif MODEL_ID==46
+#elif MODEL_ID==30
 	#include "mobilenet_v2_0_5_128_quantKernels.h"
-#elif MODEL_ID==47
+#elif MODEL_ID==31
 	#include "mobilenet_v2_0_5_96_quantKernels.h"
+#elif MODEL_ID==32
+	#include "mobilenet_v3_large_minimalistic_1_0_224_quantKernels.h"
 #endif
 
 
