@@ -4,7 +4,7 @@ This repository showcases the GAP *flow* for Image Classification models inferen
 Specifically, the GAP *flow* code generation applies on quantized state-of-the-art deep models in TFLite format for [visual object classification](https://www.tensorflow.org/lite/guide/hosted_models).
 Besides the *nntool* scripts needed to import TFLite graph, we include the application code to run inference on [gvsoc](https://greenwaves-technologies.com/gvsoc-the-full-system-simulator-for-profiling-gap-applications/) or [GAP8 boards](https://greenwaves-technologies.com/store/).
 
-The code is intended as a fast-access point to Greenwaves Technologies tools for model bechmarking and as a starting point for development of edge intellignece on GAP8.
+The code is intended as a fast-access point to Greenwaves Technologies tools for model bechmarking and as a starting point for development of edge intelligence on GAP8.
 
 
 ## Supported Models
