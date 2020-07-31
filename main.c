@@ -124,11 +124,11 @@ int body(void)
 {
 	// Voltage-Frequency settings
 	uint32_t voltage =1200;
-	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC);
-	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL);
+	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
+	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 	//PMU_set_voltage(voltage, 0);
 	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
-		(float)voltage/1000, FREQ_FC/1000000, FREQ_CL/1000000);
+		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
 	// Initialize the ram 
   	struct pi_hyperram_conf hyper_conf;
