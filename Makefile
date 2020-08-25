@@ -35,7 +35,7 @@ $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 MODEL_SQ8=1 # use scale based quantization (tflite-like)
 
 # SET FREQUENCY OF FABRIC CONTROLLER AND CLUSTER
-FREQ_FC?=150000000
+FREQ_FC?=50000000
 FREQ_CL?=50000000
 
 

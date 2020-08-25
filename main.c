@@ -60,6 +60,10 @@ typedef signed short int NETWORK_OUT_TYPE;
 struct pi_device camera;
 static pi_buffer_t buffer;
 struct pi_device HyperRam;
+struct pi_device gpio;
+#define GPIO_OUT PI_GPIO_A1_PAD_13_B2 
+#define NMAX_ITER 5
+int iteration = 0;
 
 #ifdef HAVE_LCD
 	struct pi_device display;	
@@ -115,7 +119,10 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
+  pi_gpio_pin_write(&gpio, GPIO_OUT, 1*(iteration==NMAX_ITER-1) );
   AT_CNN(l3_buff, ResOut);
+  pi_gpio_pin_write(&gpio, GPIO_OUT, 0);
+
   printf("Runner completed\n");
 
 }
@@ -269,10 +276,29 @@ int body(void)
 	}
 	printf("Network Constructor was OK!\n");
 
+
+	//configuring gpio
+	struct pi_gpio_conf gpio_conf = {0};
+    pi_gpio_conf_init(&gpio_conf);
+    pi_open_from_conf(&gpio, &gpio_conf);
+    int errors = pi_gpio_open(&gpio);
+    if (errors)
+    {
+        printf("Error opening GPIO %d\n", errors);
+        pmsis_exit(errors);
+    }
+
+
+    /* Configure gpio input. */
+    pi_gpio_pin_configure(&gpio, GPIO_OUT, PI_GPIO_OUTPUT);
+    pi_pad_set_function(PI_PAD_13_B2_RF_PACTRL1, PI_PAD_13_B2_GPIO_A1_FUNC1  );
+
+    pi_gpio_pin_write(&gpio, GPIO_OUT, 0);
+
+
+for(iteration=0; iteration<NMAX_ITER; iteration++) {
 	// Dispatch task on the cluster 
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
-
-
 
 	//Check Results
 	int outclass, MaxPrediction = 0;
@@ -282,10 +308,10 @@ int body(void)
 			MaxPrediction = ResOut[i];
 		}
 	}
-	printf("Predicted class: %d\n", outclass);
-	printf("With confidence: %d\n", MaxPrediction);
+//	printf("Predicted class: %d\n", outclass);
+//	printf("With confidence: %d\n", MaxPrediction);
 
-
+}
 	// Performance counters
 #ifdef PERF
 	{
