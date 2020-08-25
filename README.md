@@ -10,7 +10,6 @@ The code is intended as a fast-access point to Greenwaves Technologies tools for
 ## Supported Models
 Below the models tested with the GAP *flow*. More will come shortly...
 
-
 | MODEL ID | Quantized TFLite Graph | MACs (M) | Parameters (M) | Top 1 Accuracy | FPS | Energy (mJ) |
 |-----|------------------------|----------|----------------|----------------|----------|----------|
 | 0        |[MobileNet V1 224 1.0](http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz)  | 569 | 4.24 | 70.1 | 2.1	 | 49.7 |	
@@ -48,6 +47,7 @@ Below the models tested with the GAP *flow*. More will come shortly...
 | 32	   |[MobileNet V3 Large Minimalistic](https://storage.googleapis.com/mobilenet_v3/checkpoints/v3-large-minimalistic_224_1.0_uint8.tgz)| 209 | 3.9 | 71.3 | 4.2	 | 23.7 |
 
 
+Supported models have been tested on GAP8 RevC by setting: FC clk=250MHz, CL Freq=175MHz, Vdd=1.2V, L2 Memory Used = 350kB
 
 
 
