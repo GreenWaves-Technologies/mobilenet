@@ -67,6 +67,8 @@
 	#include "mobilenet_v2_0_5_96_quantKernels.h"
 #elif MODEL_ID==32
 	#include "mobilenet_v3_large_minimalistic_1_0_224_quantKernels.h"
+#elif MODEL_ID==33
+	#include "mobilenet_v3_small_1_0_224_quantKernels.h"
 #endif
 
 
