@@ -119,11 +119,11 @@ mv mobilenet_v1_0.25_128_quant.tflite tflite_models/mobilenet_v1_0_25_128_quant.
 ####################################### MOBILENET V2 ##############################################
 
 ####  float_v2_1.4_224   ##	
-wget https://storage.googleapis.com/mobilenet_v2/checkpoints/quantized_v2_224_130.tgz
-tar -xvf quantized_v2_224_130.tgz
-mv v2_224_130/model.tflite tflite_models/mobilenet_v2_1_3_224_quant.tflite
-rm -rf v2_224_130/
-rm -rf quantized_v2_224_130.tgz
+wget https://storage.googleapis.com/mobilenet_v2/checkpoints/quantized_v2_224_140.tgz
+tar -xvf quantized_v2_224_140.tgz
+mv v2_224_140/model.tflite tflite_models/mobilenet_v2_1_4_224_quant.tflite
+rm -rf v2_224_140/
+rm -rf quantized_v2_224_140.tgz
 
 ####  float_v2_1.0_224   ##	
 wget https://storage.googleapis.com/mobilenet_v2/checkpoints/quantized_v2_224_100.tgz

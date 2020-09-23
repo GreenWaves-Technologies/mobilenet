@@ -69,9 +69,6 @@ L2_MEM NETWORK_OUT_TYPE *ResOut;
 static uint32_t l3_buff;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
-#ifdef PERF
-L2_MEM rt_perf_t *cluster_perf;
-#endif
 
 #ifdef HAVE_LCD
 
@@ -124,8 +121,8 @@ int body(void)
 {
 	// Voltage-Frequency settings
 	uint32_t voltage =1200;
-	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
-	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 	//PMU_set_voltage(voltage, 0);
 	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
 		(float)voltage/1000, FREQ_FC, FREQ_CL);
