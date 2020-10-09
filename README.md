@@ -58,8 +58,7 @@ Supported models have been tested on GAP8 RevC by setting: FC clk=250MHz, CL Fre
 A Mobilenet TFLite model can be found in the models/tflite_models folder. 
 To download other tflite hosted models you can run the script:
 
-	cd models
-	./download_models.sh
+	./models/download_models.sh
 
 # Requirements
 
