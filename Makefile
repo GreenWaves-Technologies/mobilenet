@@ -43,8 +43,9 @@ include common/model_decl.mk
 # Here we set the memory allocation for the generated kernels
 # REMEMBER THAT THE L1 MEMORY ALLOCATION MUST INCLUDE SPACE
 # FOR ALLOCATED STACKS!
-CLUSTER_STACK_SIZE=4096
-CLUSTER_SLAVE_STACK_SIZE=1024
+CLUSTER_STACK_SIZE?=6096
+CLUSTER_SLAVE_STACK_SIZE?=1024
+TOTAL_STACK_SIZE = $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* 7)
 ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
 	FREQ_CL?=50
 	FREQ_FC?=50
@@ -59,8 +60,8 @@ else
 	endif
 	FREQ_FC?=250
 	MODEL_L1_MEMORY=$(shell expr 60000 \- $(TOTAL_STACK_SIZE))
-	MODEL_L2_MEMORY=300000
-	MODEL_L3_MEMORY=8388608
+	MODEL_L2_MEMORY?=300000
+	MODEL_L3_MEMORY=8000000
 endif
 # hram - HyperBus RAM
 # qspiram - Quad SPI RAM
@@ -77,7 +78,7 @@ APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns
+APP_CFLAGS += -g -O3 -w -mno-memcpy -fno-tree-loop-distribute-patterns
 # list of includes file
 APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler
@@ -104,6 +105,10 @@ PLPBRIDGE_FLAGS += -f
 all:: model
 
 clean:: clean_model
+
+TFLITE_PYSCRIPT= models/tflite_inference.py
+test_tflite:
+	python $(TFLITE_PYSCRIPT) -t $(TRAINED_TFLITE_MODEL) -i $(IMAGE)
 
 include common/model_rules.mk
 $(info APP_SRCS... $(APP_SRCS))

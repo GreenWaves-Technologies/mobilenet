@@ -88,6 +88,7 @@ ifeq ($(MODEL_ID), 9)
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
+	CLUSTER_STACK_SIZE=5096
 endif
 
 ifeq ($(MODEL_ID), 10)
@@ -136,6 +137,7 @@ ifeq ($(MODEL_ID), 15)
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
+	MODEL_L2_MEMORY?=325000
 endif
 
 ifeq ($(MODEL_ID), 16)
