@@ -58,8 +58,7 @@ Supported models have been tested on GAP8 RevC by setting: FC clk=250MHz, CL Fre
 A Mobilenet TFLite model can be found in the models/tflite_models folder. 
 To download other tflite hosted models you can run the script:
 
-	cd models
-	./download_models.sh
+	./models/download_models.sh
 
 # Requirements
 
@@ -72,7 +71,7 @@ Once you downloaded your model and sourced the GAPsdk, you can run the applicati
 	make clean all run [platform=gvsoc] MODEL_ID=XX [FREQ_FC=YY FREQ_CL=ZZ HAVE_CAMERA=1 HAVE_LCD=1]
 
 MODEL_ID  select the target model (as detailed in the table). 
-The FREQ_FC and FREQ_CL are, respectively, the Fabric Controllers and Clusters frequencies expressed in Hz.
+The FREQ_FC and FREQ_CL are, respectively, the Fabric Controllers and Clusters frequencies expressed in MHz.
 
 If HAVE_CAMERA is not set, the application loads a [sample image](images) from file to feed the network.
 
