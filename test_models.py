@@ -20,12 +20,12 @@ def get_performance_dict():
 	performance_df = pd.read_csv('performance.csv', sep="\t", header=0)
 	return performance_df.to_dict()
 
-def update_performance_dict(new_df):
+def update_performance_dict(df_to_append):
 	today = date.today()
 	d1 = today.strftime("%d_%m_%Y")
-	original_df = get_performance_dict()
-	original_df[d1] = new_df['Mac/Cyc']
-	original_df.to_csv("performance.csv", sep="\t")
+	original_df = pd.read_csv('performance.csv', sep="\t", header=0)
+	original_df[d1] = df_to_append['Mac/Cyc']
+	original_df.to_csv("performance.csv", sep="\t", index=False)
 
 def main():
 	try:
