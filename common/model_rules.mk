@@ -90,7 +90,6 @@ model: $(MODEL_GEN_C)
 clean_model:
 	$(RM) $(MODEL_GEN_EXE)
 	$(RM) -rf $(MODEL_BUILD)
-	$(RM) *.dat
 
 clean_train:
 	$(RM) -rf $(MODEL_TRAIN_BUILD)

@@ -39,10 +39,9 @@
 #define NUM_CLASSES 	1001
 #define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
-#ifndef HAVE_CAMERA
-	#define __XSTR(__s) __STR(__s)
-	#define __STR(__s) #__s 
-#else	
+#define __XSTR(__s) __STR(__s)
+#define __STR(__s) #__s 
+#ifdef HAVE_CAMERA	
 	#define CAMERA_WIDTH    (324)
 	#define CAMERA_HEIGHT   (244)
 	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
@@ -131,11 +130,11 @@ int body(void)
 {
 	// Voltage-Frequency settings
 	uint32_t voltage =1200;
-	rt_freq_set(RT_FREQ_DOMAIN_FC, FREQ_FC);
-	rt_freq_set(RT_FREQ_DOMAIN_CL, FREQ_CL);
+	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 	//PMU_set_voltage(voltage, 0);
 	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
-		(float)voltage/1000, FREQ_FC/1000000, FREQ_CL/1000000);
+		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
 	// Initialize the ram 
   	struct pi_hyperram_conf hyper_conf;
@@ -269,9 +268,10 @@ int body(void)
 
 	// Network Constructor
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
-	if (AT_CONSTRUCT())
+	int err_const = AT_CONSTRUCT();
+	if (err_const)
 	{
-	  printf("Graph constructor exited with an error\n");
+	  printf("Graph constructor exited with error: %d\n", err_const);
 	  return 1;
 	}
 	printf("Network Constructor was OK!\n");
@@ -338,7 +338,7 @@ for(iteration=0; iteration<NMAX_ITER; iteration++) {
 
 int main(void)
 {
-    printf("\n\n\t *** Image classification models on GAP ***\n\n");
+    printf("\n\n\t *** ImageNet classification on GAP ***\n");
     return pmsis_kickoff((void *) body);
 }
 
