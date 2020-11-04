@@ -67,7 +67,7 @@ def main():
 	interpreter.set_tensor(input_details[0]['index'], input_array)
 	interpreter.invoke()
 	output = interpreter.get_tensor(output_details[0]['index'])
-	print("Class predicted: {} with confidence: {}".format(np.argmax(output), output[0, np.argmax(output)]))
+	print("Predicted class:\t{}\nWith confidence:\t{}".format(np.argmax(output), output[0, np.argmax(output)]))
 	if args.print_output:
 		np.set_printoptions(threshold=sys.maxsize)
 		print("Predictions: ")
