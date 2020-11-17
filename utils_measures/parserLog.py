@@ -12,12 +12,12 @@ csv.field_size_limit(20000000)
 
 
 # configs : FREQ_CL, FRE_FC, L2_SIZE, L1_SIZE
-conflist = [[12,175000000,250000000,200000,48804],\
-            [12,175000000,250000000,225000,48804],\
-            [12,175000000,250000000,250000,48804],\
-            [12,175000000,250000000,300000,48804],\
-            [12,175000000,250000000,325000,48804],\
-            [12,175000000,250000000,350000,48804]]
+conflist = [[12,175000000,250000000,300000,46736]]#,\
+          #  [12,175000000,250000000,225000,48804],\
+          #  [12,175000000,250000000,250000,48804],\
+          #  [12,175000000,250000000,300000,48804],\
+          #  [12,175000000,250000000,325000,48804],\
+          #  [12,175000000,250000000,350000,48804]]
 nconfig = len(conflist)
 
 MODEL_LIST = {
@@ -78,7 +78,7 @@ def get_total_stats(filename):
 data_board = [{} for x in range(nconfig)]
 data_gvsoc = [{} for x in range(nconfig)]
 
-basepath = './'
+basepath = '../logs37/'
 for entry in os.listdir(basepath):
     if os.path.isfile(os.path.join(basepath, entry)) and 'output' in entry:
         filename = basepath+entry
@@ -126,7 +126,7 @@ for entry in os.listdir(basepath):
             cluster = []
             soc = []
             memory = [] 
-            with open(s, newline='') as f:
+            with open(basepath+s, newline='') as f:
                 reader = csv.reader(f,quoting=csv.QUOTE_NONNUMERIC)
                 for r, row in enumerate(reader):
                     if r == 0:
@@ -212,9 +212,12 @@ for n in MODEL_LIST.keys():
         if n in data_board[i].keys():
             #print(data_board[i][n])
             # [MAC,MAC_CYC,CYC_CNT]
-            maccyc = data_board[i][n][1]
+            cluster = data_board[i][n][3]
+            soc = data_board[i][n][4]
+            memory = data_board[i][n][5]
+            n_points = data_board[i][n][6]
             #print(fps)
-            txt += '{:.2f}\t'.format(maccyc)
+            txt += '{:.2f}\t{:.2f}\t{:.2f}\t{:.2f}\t'.format(cluster,soc,memory,n_points)
             n_p += 1
         else:
             txt += '\t'
