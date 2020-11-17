@@ -69,6 +69,8 @@
 	#include "mobilenet_v3_large_minimalistic_1_0_224_quantKernels.h"
 #elif MODEL_ID==33
 	#include "mobilenet_v3_small_1_0_224_quantKernels.h"
+#elif MODEL_ID==34
+	#include "mcunet_imagenet_bestKernels.h"
 #endif
 
 

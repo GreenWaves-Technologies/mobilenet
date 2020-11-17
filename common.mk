@@ -286,6 +286,14 @@ ifeq ($(MODEL_ID), 33)
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 endif
 
+ifeq ($(MODEL_ID), 34)
+	MODEL_PREFIX?=mcunet_imagenet_best
+	AT_INPUT_WIDTH?=144
+	AT_INPUT_HEIGHT?=144
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
+endif
+
 ## AT GENERATED NAMES
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct

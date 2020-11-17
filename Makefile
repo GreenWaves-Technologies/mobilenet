@@ -19,6 +19,9 @@ endif
 ifeq ($(AT_INPUT_WIDTH), 160)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_160.ppm
 endif
+ifeq ($(AT_INPUT_WIDTH), 144)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00047406_144.ppm
+endif
 ifeq ($(AT_INPUT_WIDTH), 128)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
 endif
