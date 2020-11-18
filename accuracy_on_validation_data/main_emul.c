@@ -30,7 +30,12 @@
 #endif
 
 #define MAXCHAR 1000
+
+//#ifdef MODEL_ID==34
+//#define NUM_CLASSES 1000
+//#else
 #define NUM_CLASSES 1001
+//#endif
 
 extern AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
@@ -105,7 +110,10 @@ int read_folder(char *dir, int label)
       counter++;
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
-
+#ifdef MODEL_ID==34
+      printf("This is the result: %d vs teh class %d\n",result,label);
+      result += 1 ; // only 1000 classes -> skip class 0
+#endif
       //printf("label - %d\tpredicted - %d\n", label, result);
       predicted += (result==label);
     }
