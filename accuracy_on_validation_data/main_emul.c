@@ -40,7 +40,11 @@
 extern AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
 // Softmax always outputs Q15 short int even from 8 bit input
+#ifdef MODEL_ID==34
+char ResOut[NUM_CLASSES];
+#else
 short int ResOut[NUM_CLASSES];
+#endif
 
 unsigned char ImgIn[AT_INPUT_SIZE];
 unsigned int TOTAL_COUNTER, CURRENT_COUNTER;
@@ -111,7 +115,6 @@ int read_folder(char *dir, int label)
       /*------------------Execute the function "RunNetwork"--------------*/
       result = RunNetwork(NULL);
 #ifdef MODEL_ID==34
-      printf("This is the result: %d vs teh class %d\n",result,label);
       result += 1 ; // only 1000 classes -> skip class 0
 #endif
       //printf("label - %d\tpredicted - %d\n", label, result);
