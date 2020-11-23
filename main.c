@@ -111,7 +111,7 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  AT_CNN(l3_buff, ResOut);
+  AT_CNN((unsigned char *) l3_buff, ResOut);
   printf("Runner completed\n");
 
 }
