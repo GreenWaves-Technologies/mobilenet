@@ -248,13 +248,22 @@ for i,item in enumerate(bufferDMax[10:]):
 #print("Last point is ", last_point, "\nTime duration is = ", (last_point*timeIntervalns.value)/(1000*1000) ,' msec')
 
 
+# Compute Average
+CH_A_Avg = np.average(adc2mVChAMax[:last_point])
+CH_B_Avg = np.average(adc2mVChBMax[:last_point])
+CH_C_Avg = np.average(adc2mVChCMax[:last_point])
+n_Points = last_point
+print("Avg values {} {} {} over {} points!".format(CH_A_Avg,CH_B_Avg,CH_C_Avg,n_Points))
 
 with open(file_name+".csv", "w", newline='') as file:
     writer = csv.writer(file, delimiter=',')
-    writer.writerow(adc2mVChAMax[:last_point])
-    writer.writerow(adc2mVChBMax[:last_point])
-    writer.writerow(adc2mVChCMax[:last_point])
-
+#    writer.writerow(adc2mVChAMax[:last_point])
+#    writer.writerow(adc2mVChBMax[:last_point])
+#    writer.writerow(adc2mVChCMax[:last_point])
+    writer.writerow([CH_A_Avg])
+    writer.writerow([CH_B_Avg])
+    writer.writerow([CH_C_Avg])
+    writer.writerow([n_Points])
 
 ## Create time data
 #time = np.linspace(0, (cmaxSamples.value) * timeIntervalns.value, cmaxSamples.value)
@@ -272,10 +281,13 @@ with open(file_name+".csv", "w", newline='') as file:
 status["stop"] = ps.ps4000aStop(chandle)
 assert_pico_ok(status["stop"])
 
+
 # Close unitDisconnect the scope
 # handle = chandle
-status["close"] = ps.ps4000aCloseUnit(chandle)
-assert_pico_ok(status["close"])
+#status["close"] = ps.ps4000aCloseUnit(chandle)
+#assert_pico_ok(status["close"])
+
+#print("Closed")
 
 # display status returns
 print(status)

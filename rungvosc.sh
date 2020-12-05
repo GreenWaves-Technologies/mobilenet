@@ -1,8 +1,8 @@
 #MODEL_ID=0 make run platform=gvsoc > output.txt
 
-START_MODEL=17
-STOP_MODEL=17
-mkdir -p logs/
+START_MODEL=0
+STOP_MODEL=0
+mkdir -p logs38/
 
 
 ##########################################
@@ -16,10 +16,10 @@ for MODEL_L2_MEMORY in 300000 ; do
 	FREQ_CL=175
 	for i in `seq $START_MODEL $STOP_MODEL`;
 	do
-		MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make clean model  > logs37/atmodel\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY.txt
-		MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make all 
-		python3 utils_measures/ps4444Measure.py logs37/power\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY & 
-		MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make run > logs37/output\_board\_log\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY.txt
+	#	MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make clean model  > logs38/atmodel\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY.txt
+	#	MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make all 
+		python3 utils_measures/ps4444Measure.py logs38/power\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY & 
+		MODEL_ID=$i FREQ_CL=$FREQ_CL FREQ_FC=$FREQ_FC MODEL_L2_MEMORY=$MODEL_L2_MEMORY make run > logs38/output\_board\_log\_$i\_12\_$FREQ_CL\_$FREQ_FC\_$MODEL_L2_MEMORY\_$MODEL_L1_MEMORY.txt
 	done 
 
 #	FREQ_FC=250000000
