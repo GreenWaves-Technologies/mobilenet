@@ -19,6 +19,9 @@ endif
 ifeq ($(AT_INPUT_WIDTH), 160)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_160.ppm
 endif
+ifeq ($(AT_INPUT_WIDTH), 144)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00047406_144.ppm
+endif
 ifeq ($(AT_INPUT_WIDTH), 128)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
 endif
@@ -40,7 +43,7 @@ TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
 
 include common/model_decl.mk
 
-# Here we set the memory allocation for the generated kernels
+# Here we set the default memory allocation for the generated kernels
 # REMEMBER THAT THE L1 MEMORY ALLOCATION MUST INCLUDE SPACE
 # FOR ALLOCATED STACKS!
 CLUSTER_STACK_SIZE?=6096
@@ -78,7 +81,7 @@ APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -g -O3 -w -mno-memcpy -fno-tree-loop-distribute-patterns
+APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns
 # list of includes file
 APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler

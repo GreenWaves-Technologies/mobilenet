@@ -138,7 +138,6 @@ ifeq ($(MODEL_ID), 15)
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
-	MODEL_L2_MEMORY?=325000
 endif
 
 ifeq ($(MODEL_ID), 16)
@@ -147,7 +146,7 @@ ifeq ($(MODEL_ID), 16)
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
-	MODEL_L2_MEMORY?=325000
+	MODEL_L2_MEMORY?=350000
 endif
 
 ifeq ($(MODEL_ID), 17)
@@ -275,6 +274,22 @@ ifeq ($(MODEL_ID), 32)
 	MODEL_PREFIX?=mobilenet_v3_large_minimalistic_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
+endif
+
+ifeq ($(MODEL_ID), 33)
+	MODEL_PREFIX?=mobilenet_v3_small_1_0_224_quant
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
+endif
+
+ifeq ($(MODEL_ID), 34)
+	MODEL_PREFIX?=mcunet_imagenet_best
+	AT_INPUT_WIDTH?=144
+	AT_INPUT_HEIGHT?=144
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 endif
