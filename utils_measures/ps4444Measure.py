@@ -260,10 +260,10 @@ with open(file_name+".csv", "w", newline='') as file:
 #    writer.writerow(adc2mVChAMax[:last_point])
 #    writer.writerow(adc2mVChBMax[:last_point])
 #    writer.writerow(adc2mVChCMax[:last_point])
-    writer.writerow([CH_A_Avg])
-    writer.writerow([CH_B_Avg])
-    writer.writerow([CH_C_Avg])
-    writer.writerow([n_Points])
+    writer.writerow(['CH_A_Avg',CH_A_Avg])
+    writer.writerow(['CH_B_Avg',CH_B_Avg])
+    writer.writerow(['CH_C_Avg',CH_C_Avg])
+    writer.writerow(['n_Points',n_Points])
 
 ## Create time data
 #time = np.linspace(0, (cmaxSamples.value) * timeIntervalns.value, cmaxSamples.value)

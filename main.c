@@ -39,10 +39,9 @@
 #define NUM_CLASSES 	1001
 #define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
-#ifndef HAVE_CAMERA
-	#define __XSTR(__s) __STR(__s)
-	#define __STR(__s) #__s 
-#else	
+#define __XSTR(__s) __STR(__s)
+#define __STR(__s) #__s 
+#ifdef HAVE_CAMERA	
 	#define CAMERA_WIDTH    (324)
 	#define CAMERA_HEIGHT   (244)
 	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
@@ -120,7 +119,7 @@ static void RunNetwork()
   gap_cl_resethwtimer();
 #endif
   pi_gpio_pin_write(&gpio, GPIO_OUT, 1*(iteration==NMAX_ITER-1) );
-  AT_CNN(l3_buff, ResOut);
+  AT_CNN((unsigned char *) l3_buff, ResOut);
   pi_gpio_pin_write(&gpio, GPIO_OUT, 0);
 
   printf("Runner completed\n");
@@ -131,12 +130,11 @@ int body(void)
 {
 	// Voltage-Frequency settings
 	uint32_t voltage =1200;
-    pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
-    pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
-    //PMU_set_voltage(voltage, 0);
-    printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
-          (float)voltage/1000, FREQ_FC, FREQ_CL);
-
+	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
+	//PMU_set_voltage(voltage, 0);
+	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
+		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
 	// Initialize the ram 
   	struct pi_hyperram_conf hyper_conf;
@@ -298,9 +296,10 @@ int body(void)
     pi_gpio_pin_write(&gpio, GPIO_OUT, 0);
 
 
-for(iteration=0; iteration<NMAX_ITER; iteration++) {
-	// Dispatch task on the cluster 
-	pi_cluster_send_task_to_cl(&cluster_dev, task);
+	for(iteration=0; iteration<NMAX_ITER; iteration++) {
+		// Dispatch task on the cluster 
+		pi_cluster_send_task_to_cl(&cluster_dev, task);
+	}
 
 	//Check Results
 	int outclass, MaxPrediction = 0;
@@ -310,10 +309,11 @@ for(iteration=0; iteration<NMAX_ITER; iteration++) {
 			MaxPrediction = ResOut[i];
 		}
 	}
-//	printf("Predicted class: %d\n", outclass);
-//	printf("With confidence: %d\n", MaxPrediction);
+    printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
+	printf("Predicted class:\t%d\n", outclass);
+	printf("With confidence:\t%d\n", MaxPrediction);
 
-}
+
 	// Performance counters
 #ifdef PERF
 	{
@@ -340,7 +340,7 @@ for(iteration=0; iteration<NMAX_ITER; iteration++) {
 
 int main(void)
 {
-    printf("\n\n\t *** Image classification models on GAP ***\n\n");
+    printf("\n\n\t *** ImageNet classification on GAP ***\n");
     return pmsis_kickoff((void *) body);
 }
 
