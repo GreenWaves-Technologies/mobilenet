@@ -269,8 +269,6 @@ int body(void)
 	// Dispatch task on the cluster 
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
 
-
-
 	//Check Results
 	int outclass, MaxPrediction = 0;
 	for(int i=0; i<NUM_CLASSES; i++){
@@ -301,7 +299,7 @@ int body(void)
 
 	// Netwrok Destructor
 	AT_DESTRUCT();
-
+	pi_cluster_close(&cluster_dev);
 	pmsis_exit(0);
 
 	return 0;
