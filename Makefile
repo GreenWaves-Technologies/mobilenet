@@ -9,6 +9,7 @@ ifndef GAP_SDK_HOME
 endif
 
 include common.mk
+QUANT_FLAG ?= -q
 
 ifeq ($(AT_INPUT_WIDTH), 224)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_224.ppm

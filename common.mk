@@ -286,6 +286,15 @@ ifeq ($(MODEL_ID), 33)
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 endif
 
+ifeq ($(MODEL_ID), 34)
+	MODEL_PREFIX?=squeezenet
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_with_quantization
+	QUANT_FLAG = 
+endif
+
 ## AT GENERATED NAMES
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
