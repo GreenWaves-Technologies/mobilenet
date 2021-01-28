@@ -106,6 +106,9 @@ all:: model
 
 clean:: clean_model
 
+clean_at_model::
+	$(RM) $(MODEL_GEN_C)
+
 TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
 	python $(TFLITE_PYSCRIPT) -t $(TRAINED_TFLITE_MODEL) -i $(IMAGE)

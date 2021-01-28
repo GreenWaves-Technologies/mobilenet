@@ -292,7 +292,7 @@ int body(void)
 			TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
 		}
 		printf("\n");
-		printf("\t\t\t %s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
+		printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
 		printf("\n");
 	}
 #endif

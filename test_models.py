@@ -8,7 +8,7 @@ import signal
 from datetime import date
 
 CLASS_MATCH = re.compile(r'Predicted class:\t(?P<class>[0-9]+)\n')
-PERF_MATCH = re.compile(r'\t\t\t\s+Total:\s+Cycles:\s+(?P<cycles>[0-9]+),\s+Operations:\s+(?P<operations>[0-9]+),\s+Operations\/Cycle:\s+(?P<opovercyc>[0-9.]+)\n')
+PERF_MATCH = re.compile(r'\s+Total:\s+Cycles:\s+(?P<cycles>[0-9]+),\s+Operations:\s+(?P<operations>[0-9]+),\s+Operations\/Cycle:\s+(?P<opovercyc>[0-9.]+)\n')
 NUM_MODELS = 33
 GT_predictions = {0: 42, 1: 77, 2: 42, 3: 67, 4: 42, 5: 121, 6: 311, 7: 77, 8: 78, 9: 69, 10: 42, 11: 311, 12: 77, 13: 39, 14: 121, 15: 121, 16: 49, 17: 42, 18: 42, 19: 43, 20: 42, 21: 42, 22: 42, 23: 42, 24: 42, 25: 42, 26: 77, 27: 42, 28: 42, 29: 42, 30: 39, 31: 276, 32: 42}
 # predicted values with emul mode (tested to be ok in validation) on ILSVRC2012_val_00011158 image
