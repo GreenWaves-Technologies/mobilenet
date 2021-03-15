@@ -111,7 +111,7 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  AT_CNN(l3_buff, ResOut);
+  AT_CNN((unsigned char *) l3_buff, ResOut);
   printf("Runner completed\n");
 
 }
@@ -269,8 +269,6 @@ int body(void)
 	// Dispatch task on the cluster 
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
 
-
-
 	//Check Results
 	int outclass, MaxPrediction = 0;
 	for(int i=0; i<NUM_CLASSES; i++){
@@ -294,14 +292,14 @@ int body(void)
 			TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
 		}
 		printf("\n");
-		printf("\t\t\t %s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
+		printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
 		printf("\n");
 	}
 #endif
 
 	// Netwrok Destructor
 	AT_DESTRUCT();
-
+	pi_cluster_close(&cluster_dev);
 	pmsis_exit(0);
 
 	return 0;

@@ -29,3 +29,12 @@ Since the [main file](./main_emul.c) uses the GAP functionalities, the images ne
     cd dataset_conversion
     python3 ppm_dataset_generator.py -D -H 224 -W 224 --original_dataset_path path/to/imagenet/val --converted_dataset_path imagenet/converted/
 
+
+## Computing Top1 Accuracy on TFLite models
+To compute the accyuracy of a tflite model on the converted dataset:
+
+    python3 test_tflite.py ../path/to/folder/tflite/models/ tflite_model_name path/to/dataset
+
+e.g. python3 test_tflite.py ../models/tflite_models/ mobilenet_v1_1_0_224_quant dataset_conversion/imagenet224/
+
+
