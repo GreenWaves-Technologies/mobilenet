@@ -1,12 +1,6 @@
+qtune * option --use_ne16
 adjust
 fusions --scale8
-#nodeoption 0 ALLOCATE 1
-imageformat input_1 rgb888 offset_int8
-
-nodeoption CONV_2D_0_0_fusion PARALLELFEATURES
-nodeoption DEPTHWISE_CONV_2D_0_1_fusion PARALLELFEATURES 0
-nodeoption DEPTHWISE_CONV_2D_0_3_fusion PARALLELFEATURES 0
-set graph_noinline_node true
 
 set l3_ram_ext_managed true
 set default_input_exec_location "AT_MEM_L3_HRAM"
@@ -16,6 +10,6 @@ set graph_produce_operinfos true
 set graph_monitor_cycles true
 #set graph_const_exec_from_flash true
 #set graph_dump_tensor 0
-#set graph_checksum 1
-#set graph_trace_exec true
+set graph_checksum 1
+set graph_trace_exec true
 save_state

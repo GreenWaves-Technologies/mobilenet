@@ -34,11 +34,16 @@ BUILD_DIR=BUILD
 $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 
 MODEL_SQ8=1 # use scale based quantization (tflite-like)
+MODEL_NE16 ?= 0
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
 TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
 
+ifeq ($(MODEL_NE16), 1)
+	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
+	MODEL_SUFFIX = _NE16
+endif
 include common/model_decl.mk
 
 # Here we set the default memory allocation for the generated kernels
@@ -79,7 +84,7 @@ APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns
+APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage
 # list of includes file
 APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler
@@ -105,10 +110,11 @@ PLPBRIDGE_FLAGS += -f
 # all depends on the model
 all:: model
 
-clean:: clean_model
+clean:: #clean_model
 
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)
+	$(RM) $(MODEL_GEN_EXE)
 
 TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:

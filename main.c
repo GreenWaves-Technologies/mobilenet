@@ -111,8 +111,10 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
+  int start_timer = gap_cl_readhwtimer();
   AT_CNN((unsigned char *) l3_buff, ResOut);
-  printf("Runner completed\n");
+  int finish_timer = gap_cl_readhwtimer() - start_timer;
+  printf("Runner completed: %d Cycles\n", finish_timer);
 
 }
 
