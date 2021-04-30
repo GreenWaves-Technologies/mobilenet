@@ -30,6 +30,9 @@ with open(file_csv, newline='') as f:
 
 
 # parse at file
+L1_MEM_USAGE = re.compile(r'\s*(?P<column>Shared L1 Memory size) \(Bytes\)\s+\: Given\:\s+(?P<given>[0-9]+)\,\sUsed\:\s+(?P<used>[0-9]+)')
+L2_MEM_USAGE = re.compile(r'\s*(?P<column>L2 Memory size) \(Bytes\)\s+\: Given\:\s+(?P<given>[0-9]+)\,\sUsed\:\s+(?P<used>[0-9]+)')
+L3_MEM_USAGE = re.compile(r'\s*(?P<column>L3 Memory size) \(Bytes\)\s+\: Given\:\s+(?P<given>[0-9]+)\,\sUsed\:\s+(?P<used>[0-9]+)')
 L3_MEM_BW = re.compile(r'(?P<column>L3 Memory bandwidth for 1 graph run)\s+\:\s+(?P<value>[0-9]+)\s+Bytes\n')
 L2_MEM_BW = re.compile(r'(?P<column>L2 Memory bandwidth for 1 graph run)\s+\:\s+(?P<value>[0-9]+)\s+Bytes\n')
 KER_ARGS = re.compile(r'(?P<column>Sum of all Kernels arguments size)\s+\:\s+(?P<value>[0-9]+)\s+Bytes\n')
@@ -39,7 +42,7 @@ L3_MEM_BW_PER = re.compile(r'(?P<column>Percentage of baseline BW for L3)\s+\:\s
 KER_OPS = re.compile(r'(?P<column>Sum of all Kernels operations)\s+\:\s+(?P<value>[0-9]+)\s+Operations\n')
 TOT_COEFFS = re.compile(r'(?P<column>Total amount of flash coefficients)\s+\:\s+(?P<value>[0-9]+)\s+Bytes\n')
 
-matches = [L3_MEM_BW, L2_MEM_BW, TIL_OH, KER_ARGS, L2_MEM_BW_PER, L3_MEM_BW_PER, KER_OPS, TOT_COEFFS]
+matches = [L3_MEM_BW, L2_MEM_BW, TIL_OH, KER_ARGS, L2_MEM_BW_PER, L3_MEM_BW_PER, KER_OPS, TOT_COEFFS,L1_MEM_USAGE, L2_MEM_USAGE, L3_MEM_USAGE]
 
 with open(file_at, newline='') as f:
 	out_log = f.readlines()
@@ -49,9 +52,14 @@ with open(file_at, newline='') as f:
 			m = match.search(line)
 			if m:
 				metric = m['column']
-				value= float(m['value'])
+				if "Memory size" in metric:
+					value= float(m['used'])
+					print(m['column'], float(m['used']))
+				else:
+					value= float(m['value'])
+					print(m['column'], float(m['value']))
 				at_log[metric] = value
-				print(m['column'], float(m['value']))
+				
 				continue
 
 
