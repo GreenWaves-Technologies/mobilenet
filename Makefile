@@ -97,7 +97,11 @@ ifeq ($(HAVE_LCD), 1)
 	APP_CFLAGS += -DHAVE_LCD
 endif
 
-# this line is needed to flash into the chip the model tensors 
+ifeq '$(MODEL_L3_EXEC)' 'qspiram'
+	APP_CFLAGS += -DUSE_QSPI
+endif
+
+# this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
 READFS_FILES=$(abspath $(MODEL_TENSORS))
 PLPBRIDGE_FLAGS += -f
