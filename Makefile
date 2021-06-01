@@ -64,12 +64,17 @@ else
 	MODEL_L2_MEMORY?=300000
 	MODEL_L3_MEMORY=8000000
 endif
+
 # hram - HyperBus RAM
 # qspiram - Quad SPI RAM
 MODEL_L3_EXEC=hram
 # hflash - HyperBus Flash
 # qpsiflash - Quad SPI Flash
 MODEL_L3_CONST=hflash
+# ram - Model input from ram
+# l2  - Model input from l2 memory
+MODEL_INPUT=ram
+
 
 pulpChip = GAP
 PULP_APP = imagenet
@@ -97,7 +102,36 @@ ifeq ($(HAVE_LCD), 1)
 	APP_CFLAGS += -DHAVE_LCD
 endif
 
-# this line is needed to flash into the chip the model tensors 
+ifeq '$(MODEL_L3_EXEC)' 'qspiram'
+	MODEL_L3_RAM=AT_MEM_L3_QSPIRAM
+	APP_CFLAGS += -DUSE_QSPI
+else ifeq '$(MODEL_L3_EXEC)' 'hram'
+	MODEL_L3_RAM=AT_MEM_L3_HRAM
+else
+	$(error MODEL_L3_EXEC can only be qspiram or hram)
+endif
+
+ifeq '$(MODEL_L3_CONST)' 'qpsiflash'
+	MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
+else ifeq '$(MODEL_L3_CONST)' 'hflash'
+	MODEL_L3_FLASH=AT_MEM_L3_HFLASH
+else
+	$(error MODEL_L3_CONST can only be qpsiflash or hflash)
+endif
+
+ifeq '$(MODEL_INPUT)' 'ram'
+	ifeq '$(MODEL_L3_EXEC)' 'qspiram'
+		MODEL_INPUT=AT_MEM_L3_QSPIRAM
+	else
+		MODEL_INPUT=AT_MEM_L3_HRAM
+	endif
+else ifeq '$(MODEL_INPUT)' 'l2'
+	MODEL_INPUT=AT_MEM_L2
+else
+	$(error MODEL_INPUT can only be ram or l2)
+endif
+
+# this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
 READFS_FILES=$(abspath $(MODEL_TENSORS))
 PLPBRIDGE_FLAGS += -f

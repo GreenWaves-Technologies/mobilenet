@@ -15,12 +15,18 @@
  */
 
 #include "pmsis.h"
-#include "bsp/flash/hyperflash.h"
+
+#ifdef USE_QSPI
+# include "bsp/flash/spiflash.h"
+# include "bsp/ram/spiram.h"
+#else
+# include "bsp/flash/hyperflash.h"
+# include "bsp/ram/hyperram.h"
+#endif
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
 #include "bsp/camera/himax.h"
 #include "bsp/ram.h"
-#include "bsp/ram/hyperram.h"
 #include "bsp/display/ili9341.h"
 
 #include "main.h"
@@ -28,8 +34,8 @@
 
 // Comment or Uncomment if using Himax camera or LCD on a board
 //#define HAVE_CAMERA //uncomment if using himax camera
-#ifdef HAVE_CAMERA 
-	#define HAVE_LCD //uncomment if using LCD 
+#ifdef HAVE_CAMERA
+	#define HAVE_LCD //uncomment if using LCD
 #endif
 #ifndef HAVE_CAMERA
 	#undef HAVE_LCD // HAVE_LCD can be set only if HAVE_CAMERA is defined
@@ -40,8 +46,8 @@
 #define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 
 #define __XSTR(__s) __STR(__s)
-#define __STR(__s) #__s 
-#ifdef HAVE_CAMERA	
+#define __STR(__s) #__s
+#ifdef HAVE_CAMERA
 	#define CAMERA_WIDTH    (324)
 	#define CAMERA_HEIGHT   (244)
 	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
@@ -58,10 +64,17 @@ typedef signed short int NETWORK_OUT_TYPE;
 // Global Variables
 struct pi_device camera;
 static pi_buffer_t buffer;
+
+#ifdef USE_QSPI
+struct pi_device QspiRam;
+#define EXTERNAL_RAM QspiRam
+#else
 struct pi_device HyperRam;
+#define EXTERNAL_RAM HyperRam
+#endif
 
 #ifdef HAVE_LCD
-	struct pi_device display;	
+	struct pi_device display;
 #endif
 
 L2_MEM NETWORK_OUT_TYPE *ResOut;
@@ -105,15 +118,14 @@ static int open_camera_himax(struct pi_device *device)
 
 static void RunNetwork()
 {
-  printf("Running on cluster\n");
+printf("Running on cluster\n");
 #ifdef PERF
-  printf("Start timer\n");
-  gap_cl_starttimer();
-  gap_cl_resethwtimer();
+    printf("Start timer\n");
+    gap_cl_starttimer();
+    gap_cl_resethwtimer();
 #endif
-  AT_CNN((unsigned char *) l3_buff, ResOut);
-  printf("Runner completed\n");
-
+    AT_CNN((unsigned char *) l3_buff, ResOut);
+    printf("Runner completed\n");
 }
 
 int body(void)
@@ -123,21 +135,33 @@ int body(void)
 	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
 	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 	//PMU_set_voltage(voltage, 0);
-	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
+	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n",
 		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
-	// Initialize the ram 
-  	struct pi_hyperram_conf hyper_conf;
-  	pi_hyperram_conf_init(&hyper_conf);
-  	pi_open_from_conf(&HyperRam, &hyper_conf);
-	if (pi_ram_open(&HyperRam))
+#ifdef USE_QSPI
+        // Initialize the qspiram
+	struct pi_spiram_conf hyper_conf;
+	pi_spiram_conf_init(&hyper_conf);
+	pi_open_from_conf(&EXTERNAL_RAM, &hyper_conf);
+	if (pi_ram_open(&EXTERNAL_RAM))
 	{
 		printf("Error ram open !\n");
 		pmsis_exit(-3);
 	}
+#else
+	// Initialize the hyperram
+	struct pi_hyperram_conf hyper_conf;
+	pi_hyperram_conf_init(&hyper_conf);
+	pi_open_from_conf(&EXTERNAL_RAM, &hyper_conf);
+	if (pi_ram_open(&EXTERNAL_RAM))
+	{
+		printf("Error ram open !\n");
+		pmsis_exit(-3);
+	}
+#endif
 
-	// Allocate L3 buffer to store input data 
-	if (pi_ram_alloc(&HyperRam, &l3_buff, (uint32_t) AT_INPUT_SIZE))
+	// Allocate L3 buffer to store input data
+	if (pi_ram_alloc(&EXTERNAL_RAM, &l3_buff, (uint32_t) AT_INPUT_SIZE))
 	{
 		printf("Ram malloc failed !\n");
 		pmsis_exit(-4);
@@ -161,14 +185,14 @@ int body(void)
 		pmsis_exit(1);
 	}
 
-	// Open Camera 
+	// Open Camera
 	if (open_camera_himax(&camera))
 	{
 		printf("Failed to open camera\n");
 		pmsis_exit(-2);
 	}
 
-	// Get an image 
+	// Get an image
     pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
     pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
     pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
@@ -179,10 +203,10 @@ int body(void)
     	for(int j=0;j<CAMERA_WIDTH;j++){
     		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
     			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
-    			ps++;        			
+    			ps++;
     		}
     	}
-    } 	
+    }
 
 #else
 	// Allocate temp buffer for image data
@@ -205,27 +229,27 @@ int body(void)
 #endif
 
 #ifdef HAVE_LCD
-	// Config Buffer for LCD Display 
+	// Config Buffer for LCD Display
 	buffer.data = Input_1;
 	buffer.stride = 0;
 
 	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, Input_1);
 	pi_buffer_set_stride(&buffer, 0);
 	pi_buffer_set_format(&buffer, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, PI_BUFFER_FORMAT_GRAY);
-	
+
 	pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
-#endif 
+#endif
 
 	//move input image to L3 Hyperram
 #ifdef HAVE_CAMERA
-	// Copy Single Channel Greyscale to 3 channel RGB: CH0-CH1-CH2 
-	pi_ram_write(&HyperRam, (l3_buff), 									Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&HyperRam, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), 	Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&HyperRam, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	// Copy Single Channel Greyscale to 3 channel RGB: CH0-CH1-CH2
+	pi_ram_write(&EXTERNAL_RAM, (l3_buff), 									Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	pi_ram_write(&EXTERNAL_RAM, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), 	Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
+	pi_ram_write(&EXTERNAL_RAM, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
 	pmsis_l2_malloc_free(Input_1, CAMERA_SIZE*sizeof(char));
 #else
 	// write greyscale image to RAM
-	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
+	pi_ram_write(&EXTERNAL_RAM, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
 	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
 #endif
 
@@ -266,7 +290,7 @@ int body(void)
 	}
 	printf("Network Constructor was OK!\n");
 
-	// Dispatch task on the cluster 
+	// Dispatch task on the cluster
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
 
 	//Check Results
@@ -277,7 +301,7 @@ int body(void)
 			MaxPrediction = ResOut[i];
 		}
 	}
-    printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
+	printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
 	printf("Predicted class:\t%d\n", outclass);
 	printf("With confidence:\t%d\n", MaxPrediction);
 

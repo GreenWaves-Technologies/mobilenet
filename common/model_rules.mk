@@ -47,7 +47,15 @@ $(MODEL_TFLITE): $(TRAINED_TFLITE_MODEL) | $(MODEL_BUILD)
 #	Fuse nodes together to match fused AutoTiler generators
 #	Save the graph state files
 
-$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) $(NNTOOL_SCRIPT) | $(MODEL_BUILD)
+# ifeq '$(MODEL_L3_EXEC)' 'qspiram'
+# $(NNTOOL_SCRIPT)_prepared: $(NNTOOL_SCRIPT)
+# 	sed -e 's/_EXTERNAL_MEMORY_TYPE_/AT_MEM_L3_QSPIRAM/g' -e 's/_EXTERNAL_FLASH_TYPE_/AT_MEM_L3_QSPIFLASH/g' $(NNTOOL_SCRIPT) > $(NNTOOL_SCRIPT)_prepared
+# else
+# $(NNTOOL_SCRIPT)_prepared: $(NNTOOL_SCRIPT)
+# 	sed -e 's/_EXTERNAL_MEMORY_TYPE_/AT_MEM_L3_HRAM/g' -e 's/_EXTERNAL_FLASH_TYPE_/AT_MEM_L3_HFLASH/g' $(NNTOOL_SCRIPT) > $(NNTOOL_SCRIPT)_prepared
+# endif
+
+$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) | $(MODEL_BUILD)
 	echo "GENERATING NNTOOL STATE FILE"
 	$(NNTOOL) -s $(NNTOOL_SCRIPT) $< $(QUANT_FLAG)
 
