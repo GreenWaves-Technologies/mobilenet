@@ -17,23 +17,11 @@
 #include "pmsis.h"
 #include "bsp/flash/hyperflash.h"
 #include "bsp/bsp.h"
-#include "bsp/buffer.h"
-#include "bsp/camera/himax.h"
 #include "bsp/ram.h"
 #include "bsp/ram/hyperram.h"
-#include "bsp/display/ili9341.h"
 
 #include "main.h"
 
-
-// Comment or Uncomment if using Himax camera or LCD on a board
-//#define HAVE_CAMERA //uncomment if using himax camera
-#ifdef HAVE_CAMERA 
-	#define HAVE_LCD //uncomment if using LCD 
-#endif
-#ifndef HAVE_CAMERA
-	#undef HAVE_LCD // HAVE_LCD can be set only if HAVE_CAMERA is defined
-#endif
 
 /* Defines */
 #define NUM_CLASSES 	1001
@@ -41,67 +29,15 @@
 
 #define __XSTR(__s) __STR(__s)
 #define __STR(__s) #__s 
-#ifdef HAVE_CAMERA	
-	#define CAMERA_WIDTH    (324)
-	#define CAMERA_HEIGHT   (244)
-	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
-#endif
 
-
-#ifdef HAVE_LCD
-	#define LCD_WIDTH    AT_INPUT_WIDTH
-	#define LCD_HEIGHT   AT_INPUT_HEIGHT
-#endif
-
-typedef signed short int NETWORK_OUT_TYPE;
+typedef F16 NETWORK_OUT_TYPE;
 
 // Global Variables
-struct pi_device camera;
-static pi_buffer_t buffer;
 struct pi_device HyperRam;
-
-#ifdef HAVE_LCD
-	struct pi_device display;	
-#endif
 
 L2_MEM NETWORK_OUT_TYPE *ResOut;
 static uint32_t l3_buff;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
-
-
-#ifdef HAVE_LCD
-
-static int open_display(struct pi_device *device)
-{
-  struct pi_ili9341_conf ili_conf;
-
-  pi_ili9341_conf_init(&ili_conf);
-  pi_open_from_conf(device, &ili_conf);
-  if (pi_display_open(device))
-    return -1;
-  if (pi_display_ioctl(device, PI_ILI_IOCTL_ORIENTATION, (void *)PI_ILI_ORIENTATION_90))
-    return -1;
-
-  return 0;
-}
-#endif
-
-
-#ifdef HAVE_CAMERA
-
-static int open_camera_himax(struct pi_device *device)
-{
-  struct pi_himax_conf cam_conf;
-
-  pi_himax_conf_init(&cam_conf);
-  pi_open_from_conf(device, &cam_conf);
-  if (pi_camera_open(device))
-    return -1;
-
-  return 0;
-
-}
-#endif
 
 static void RunNetwork()
 {
@@ -112,7 +48,7 @@ static void RunNetwork()
   gap_cl_resethwtimer();
 #endif
   int start_timer = gap_cl_readhwtimer();
-  AT_CNN((unsigned char *) l3_buff, ResOut);
+  AT_CNN((F16 *) l3_buff, ResOut);
   int finish_timer = gap_cl_readhwtimer() - start_timer;
   printf("Runner completed: %d Cycles\n", finish_timer);
 
@@ -124,7 +60,6 @@ int body(void)
 	uint32_t voltage =1200;
 	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
 	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
-//	pi_freq_set(PI_FREQ_DOMAIN_PERIPH, FREQ_FC*1000*1000);
 	//PMU_set_voltage(voltage, 0);
 	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
 		(float)voltage/1000, FREQ_FC, FREQ_CL);
@@ -140,56 +75,15 @@ int body(void)
 	}
 
 	// Allocate L3 buffer to store input data 
-	if (pi_ram_alloc(&HyperRam, &l3_buff, (uint32_t) AT_INPUT_SIZE))
+	if (pi_ram_alloc(&HyperRam, &l3_buff, (uint32_t) 2*AT_INPUT_SIZE))
 	{
 		printf("Ram malloc failed !\n");
 		pmsis_exit(-4);
 	}
 
-	// Open LCD
-#ifdef HAVE_LCD
-	if (open_display(&display))
-	{
-		printf("Failed to open display\n");
-		pmsis_exit(-1);
-	}
-#endif
 
-
-#ifdef HAVE_CAMERA
-	// Allocate temp buffer for camera data
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));
-	if(!Input_1){
-		printf("Failed allocation!\n");
-		pmsis_exit(1);
-	}
-
-	// Open Camera 
-	if (open_camera_himax(&camera))
-	{
-		printf("Failed to open camera\n");
-		pmsis_exit(-2);
-	}
-
-	// Get an image 
-    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-    pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
-    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
-
-    // Image Cropping to [ AT_INPUT_HEIGHT x AT_INPUT_WIDTH ]
-    int ps=0;
-    for(int i =0;i<CAMERA_HEIGHT;i++){
-    	for(int j=0;j<CAMERA_WIDTH;j++){
-    		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
-    			ps++;        			
-    		}
-    	}
-    } 	
-
-#else
 	// Allocate temp buffer for image data
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_SIZE*sizeof(char));
+	uint8_t* Input_1 = (uint8_t*) AT_L2_ALLOC(0, AT_INPUT_SIZE*sizeof(char));
 	if(!Input_1){
 		printf("Failed allocation!\n");
 		pmsis_exit(1);
@@ -205,35 +99,20 @@ int body(void)
 		pmsis_exit(-1);
 	}
 	printf("Finished reading image %s\n", ImageName);
-#endif
 
-#ifdef HAVE_LCD
-	// Config Buffer for LCD Display 
-	buffer.data = Input_1;
-	buffer.stride = 0;
 
-	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, Input_1);
-	pi_buffer_set_stride(&buffer, 0);
-	pi_buffer_set_format(&buffer, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, PI_BUFFER_FORMAT_GRAY);
-	
-	pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
-#endif 
+	F16* NNInput = (F16*) AT_L2_ALLOC(0, AT_INPUT_SIZE*sizeof(F16));
 #ifdef MODEL_HWC
-	for (int i=0; i<AT_INPUT_SIZE; i++) Input_1[i] -= 128;
+	for (int i=0; i<AT_INPUT_SIZE; i++) NNInput[i] = ((float) Input_1[i]) / (1<<7) - 1.0;
+#else
+	for (int h=0; h<AT_INPUT_HEIGHT; h++)
+		for (int w=0; w<AT_INPUT_WIDTH; w++)
+			for (int c=0; c<3; c++) NNInput[c*AT_INPUT_HEIGHT*AT_INPUT_WIDTH+h*AT_INPUT_WIDTH+w] = ((float) Input_1[h*AT_INPUT_WIDTH*3+w*3+c]) / (1<<7) - 1.0;
 #endif
 
-	//move input image to L3 Hyperram
-#ifdef HAVE_CAMERA
-	// Copy Single Channel Greyscale to 3 channel RGB: CH0-CH1-CH2 
-	pi_ram_write(&HyperRam, (l3_buff), 									Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&HyperRam, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), 	Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&HyperRam, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pmsis_l2_malloc_free(Input_1, CAMERA_SIZE*sizeof(char));
-#else
-	// write greyscale image to RAM
-	pi_ram_write(&HyperRam, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
-	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
-#endif
+	pi_ram_write(&HyperRam, (l3_buff), NNInput, (uint32_t) 2*AT_INPUT_SIZE);
+	AT_L2_FREE(0, NNInput, 2*AT_INPUT_SIZE*sizeof(char));
+	AT_L2_FREE(0, Input_1, AT_INPUT_SIZE*sizeof(char));
 
 	// Open the cluster
 	struct pi_device cluster_dev;
@@ -276,7 +155,8 @@ int body(void)
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
 
 	//Check Results
-	int outclass, MaxPrediction = 0;
+	int outclass;
+	F16 MaxPrediction = 0;
 	for(int i=0; i<NUM_CLASSES; i++){
 		if (ResOut[i] > MaxPrediction){
 			outclass = i;
@@ -285,7 +165,7 @@ int body(void)
 	}
     printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
 	printf("Predicted class:\t%d\n", outclass);
-	printf("With confidence:\t%d\n", MaxPrediction);
+	printf("With confidence:\t%f\n", MaxPrediction);
 
 
 	// Performance counters

@@ -1,7 +1,8 @@
-set input_norm_func "x:x/128-1"
-qtune * option --use_ne16
+qtune * option --hwc
+qtune * float float16
 adjust
 fusions --scale8
+set graph_noinline_node true
 
 set l3_ram_ext_managed true
 set default_input_exec_location "AT_MEM_L3_HRAM"
@@ -10,7 +11,8 @@ set graph_reorder_constant_in false
 set graph_produce_operinfos true
 set graph_monitor_cycles true
 #set graph_const_exec_from_flash true
+#set graph_dump_one_node CONV_2D_0_26_fusion
 #set graph_dump_tensor 4
-set graph_checksum 1
+#set graph_checksum 1
 set graph_trace_exec true
 save_state

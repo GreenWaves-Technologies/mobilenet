@@ -30,14 +30,14 @@ ifeq ($(AT_INPUT_WIDTH), 96)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
 endif
 
-io=host
+#io=host
 
 QUANT_BITS=8
 BUILD_DIR=BUILD
 $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 
-MODEL_SQ8=1 # use scale based quantization (tflite-like)
 MODEL_NE16 ?= 0
+MODEL_HWC ?= 0
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
@@ -46,7 +46,31 @@ TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
 ifeq ($(MODEL_NE16), 1)
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
 	MODEL_SUFFIX = _NE16
+	APP_CFLAGS += -Wno-discarded-qualifiers
+else
+ifeq ($(MODEL_HWC), 1)
+	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc
+	APP_CFLAGS += -DMODEL_HWC
 endif
+endif
+
+FLOAT16 ?= 0
+ifeq ($(FLOAT16), 1)
+	ifeq ($(MODEL_HWC), 1)
+		NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc_fp16
+		APP_CFLAGS += -DMODEL_HWC
+	else
+		NNTOOL_SCRIPT = models/nntool_scripts/nntool_script_fp16
+	endif
+	MODEL_FP16 = 1
+	QUANT_BITS = 0
+	MODEL_SUFFIX = _FP16
+	APP_CFLAGS += -DFLOAT16 -DSTD_FLOAT
+	MAIN = main_fp16.c
+else
+	MODEL_SQ8=1 # use scale based quantization (tflite-like)
+endif
+
 include common/model_decl.mk
 
 # Here we set the default memory allocation for the generated kernels
@@ -56,11 +80,12 @@ CLUSTER_STACK_SIZE?=6096
 CLUSTER_SLAVE_STACK_SIZE?=1024
 TOTAL_STACK_SIZE = $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* 7)
 ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
+	CLUSTER_STACK_SIZE=8096
 	FREQ_CL?=50
 	FREQ_FC?=50
 	MODEL_L1_MEMORY=$(shell expr 125000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY=1300000
-	MODEL_L3_MEMORY=8388608
+	MODEL_L3_MEMORY=8000000
 else
 	ifeq '$(TARGET_CHIP)' 'GAP8_V3'
 		FREQ_CL?=175
@@ -78,10 +103,6 @@ MODEL_L3_EXEC=hram
 # hflash - HyperBus Flash
 # qpsiflash - Quad SPI Flash
 MODEL_L3_CONST=hflash
-
-pulpChip = GAP
-PULP_APP = imagenet
-USE_PMSIS_BSP=1
 
 APP = imagenet
 MAIN ?= main.c
@@ -127,4 +148,3 @@ include common/model_rules.mk
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
 include $(RULES_DIR)/pmsis_rules.mk
-

@@ -3,7 +3,7 @@ fusions --scale8
 #nodeoption 0 ALLOCATE 1
 imageformat input_1 rgb888 offset_int8
 
-nodeoption CONV_2D_0_0_fusion PARALLELFEATURES
+nodeoption CONV_2D_0_0_fusion PARALLELFEATURES 0
 nodeoption DEPTHWISE_CONV_2D_0_1_fusion PARALLELFEATURES 0
 nodeoption DEPTHWISE_CONV_2D_0_3_fusion PARALLELFEATURES 0
 set graph_noinline_node true
