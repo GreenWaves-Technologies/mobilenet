@@ -10,7 +10,8 @@ set graph_reorder_constant_in false
 set graph_produce_operinfos true
 set graph_monitor_cycles true
 #set graph_const_exec_from_flash true
-#set graph_dump_tensor 4
+#set graph_dump_tensor 6
+#set graph_dump_one_node S3_Conv2d_16x3x3x3_Relu6
 set graph_checksum 1
 set graph_trace_exec true
 save_state
