@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import sys
-import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import re
@@ -31,51 +30,50 @@ def main():
 	final_model_id = int(sys.argv[2]) if len(sys.argv) > 2 else NUM_MODELS
 
 	out_predictions = {}
-	for model_id in range(starting_model_id, final_model_id):
-		for float16 in [0, 1]:
-			for hwc in [0, 1]:
-				model_name = str(model_id)
-				signal.signal(signal.SIGALRM, timeout_handler)
-				TIMEOUT = 200
-				signal.alarm(TIMEOUT) # break after 200 s
-				try:
-					shell_command = f'make clean clean_model all run platform={TARGET_PLATFORM} MODEL_ID={model_id} FLOAT16={float16} MODEL_HWC={hwc} PMSIS_OS=pulpos'
-					print(shell_command)
-					stream = os.popen(shell_command)
-					platform_log = stream.readlines()
-				except Exception:
-					print("Out of time Exception: Model did not end the execution in the TIMEOUT = {}".format(TIMEOUT))
-					platform_log = []
+	for ne16, float16, hwc in [(1, 0, 0)]: #(0, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0)]:
+		for model_id in range(starting_model_id, final_model_id):
+			model_name = str(model_id)
+			signal.signal(signal.SIGALRM, timeout_handler)
+			TIMEOUT = 700
+			signal.alarm(TIMEOUT) # break after 200 s
+			try:
+				shell_command = f'make clean_model all run platform={TARGET_PLATFORM} MODEL_ID={model_id} MODEL_FP16={float16} MODEL_HWC={hwc} MODEL_NE16={ne16} PMSIS_OS=pulpos'
+				print(shell_command)
+				stream = os.popen(shell_command)
+				platform_log = stream.readlines()
+			except Exception:
+				print("Out of time Exception: Model did not end the execution in the TIMEOUT = {}".format(TIMEOUT))
+				platform_log = []
 
-				platform_prediction = None
-				platform_performance = (None, None)
-				for line in platform_log:
-					m = CLASS_MATCH.search(line)
-					m_perf = PERF_MATCH.search(line)
-					m_model = MODEL_NAME_MATCH.search(line)
-					if m_perf:
-						platform_performance = (int(m_perf['cycles']), float(m_perf['opovercyc']))
-					if m:
-						platform_prediction = int(m['class'])
-					if m_model:
-						model_name = m_model[0]
+			platform_prediction = None
+			platform_performance = (None, None)
+			for line in platform_log:
+				m = CLASS_MATCH.search(line)
+				m_perf = PERF_MATCH.search(line)
+				m_model = MODEL_NAME_MATCH.search(line)
+				if m_perf:
+					platform_performance = (int(m_perf['cycles']), float(m_perf['opovercyc']))
+				if m:
+					platform_prediction = int(m['class'])
+				if m_model:
+					model_name = m_model[0]
 
-				model_name += ('_float16' if float16 else '') + ('_hwc' if hwc else '')
+			model_name += ('_float16' if float16 else '') + ('_hwc' if hwc else '') + ('_ne16' if ne16 else '')
 
-				stream_tflite = os.popen('make test_tflite MODEL_ID={}'.format(model_id))
-				tflite_log = stream_tflite.readlines()
-				tflite_prediction = None
-				for line in tflite_log:
-					m = CLASS_MATCH.search(line)
-					if m:
-						tflite_prediction = int(m['class'])
-						break
+			stream_tflite = os.popen('make test_tflite MODEL_ID={}'.format(model_id))
+			tflite_log = stream_tflite.readlines()
+			tflite_prediction = None
+			for line in tflite_log:
+				m = CLASS_MATCH.search(line)
+				if m:
+					tflite_prediction = int(m['class'])
+					break
 
-				TEST = "OK" if platform_prediction == GT_predictions[model_id] else "FAIL"
+			TEST = "OK" if platform_prediction == GT_predictions[model_id] else "FAIL"
 
-				out_predictions.update({model_name: [platform_prediction, GT_predictions[model_id], tflite_prediction, platform_performance[0], platform_performance[1], TEST]})
-				for k, v in out_predictions.items():
-					print("MODEL: {} OUT: {}".format(k, v))
+			out_predictions.update({model_name: [platform_prediction, GT_predictions[model_id], tflite_prediction, platform_performance[0], platform_performance[1], TEST]})
+			for k, v in out_predictions.items():
+				print("MODEL: {} OUT: {}".format(k, v))
 
 	df = pd.DataFrame.from_dict(out_predictions, orient='index', columns=['platform', 'ground truth', 'tflite', 'Cycles', 'Mac/Cyc', 'passed'])
 	pd.set_option('display.max_columns', 8)
