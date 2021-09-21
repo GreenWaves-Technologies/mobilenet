@@ -79,7 +79,7 @@ MODEL_INPUT=ram
 pulpChip = GAP
 PULP_APP = imagenet
 USE_PMSIS_BSP=1
-PMSIS_OS=pulpos
+PMSIS_OS?=pulpos
 
 APP = imagenet
 MAIN ?= main.c

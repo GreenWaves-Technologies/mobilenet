@@ -31,6 +31,8 @@
 
 #include "main.h"
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 
 // Comment or Uncomment if using Himax camera or LCD on a board
 //#define HAVE_CAMERA //uncomment if using himax camera
@@ -321,9 +323,23 @@ int body(void)
 	}
 #endif
 
+
 	// Netwrok Destructor
 	AT_DESTRUCT();
 	pi_cluster_close(&cluster_dev);
+	
+	
+	if(strcmp(TOSTRING(AT_MODEL_PREFIX),"mobilenet_v1_1_0_224_quant")==0){
+		if(outclass==42 && MaxPrediction==9561){
+				printf("Test successful!\n");
+				pmsis_exit(0);
+			}
+		else{
+				printf("Wrong results!\n");
+				pmsis_exit(-1);
+			}
+	}
+
 	pmsis_exit(0);
 
 	return 0;
