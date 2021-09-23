@@ -32,11 +32,7 @@
 
 typedef F16 NETWORK_OUT_TYPE;
 
-// Global Variables
-struct pi_device HyperRam;
-
 L2_MEM NETWORK_OUT_TYPE *ResOut;
-static uint32_t l3_buff;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 
 static void RunNetwork()
@@ -48,7 +44,7 @@ static void RunNetwork()
   gap_cl_resethwtimer();
 #endif
   int start_timer = gap_cl_readhwtimer();
-  AT_CNN((F16 *) l3_buff, ResOut);
+  AT_CNN(ResOut);
   int finish_timer = gap_cl_readhwtimer() - start_timer;
   printf("Runner completed: %d Cycles\n", finish_timer);
 
@@ -64,62 +60,41 @@ int body(void)
 	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
 		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
-	// Initialize the ram 
-  	struct pi_hyperram_conf hyper_conf;
-  	pi_hyperram_conf_init(&hyper_conf);
-  	pi_open_from_conf(&HyperRam, &hyper_conf);
-	if (pi_ram_open(&HyperRam))
-	{
-		printf("Error ram open !\n");
-		pmsis_exit(-3);
-	}
-
-	// Allocate L3 buffer to store input data 
-	if (pi_ram_alloc(&HyperRam, &l3_buff, (uint32_t) 2*AT_INPUT_SIZE))
-	{
-		printf("Ram malloc failed !\n");
-		pmsis_exit(-4);
-	}
-
-
-	// Allocate temp buffer for image data
-	uint8_t* Input_1 = (uint8_t*) AT_L2_ALLOC(0, AT_INPUT_SIZE*sizeof(char));
-	if(!Input_1){
-		printf("Failed allocation!\n");
-		pmsis_exit(1);
-	}
-
-	char *ImageName = __XSTR(AT_IMAGE);
-	printf("Reading image from %s\n",ImageName);
-
-	//Reading Image from Bridge
-	img_io_out_t type = IMGIO_OUTPUT_CHAR;
-	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, 0)) {
-		printf("Failed to load image %s\n", ImageName);
-		pmsis_exit(-1);
-	}
-	printf("Finished reading image %s\n", ImageName);
-
-
-	F16* NNInput = (F16*) AT_L2_ALLOC(0, AT_INPUT_SIZE*sizeof(F16));
-#ifdef MODEL_HWC
-	for (int i=0; i<AT_INPUT_SIZE; i++) NNInput[i] = ((float) Input_1[i]) / (1<<7) - 1.0;
-#else
-	for (int h=0; h<AT_INPUT_HEIGHT; h++)
-		for (int w=0; w<AT_INPUT_WIDTH; w++)
-			for (int c=0; c<3; c++) NNInput[c*AT_INPUT_HEIGHT*AT_INPUT_WIDTH+h*AT_INPUT_WIDTH+w] = ((float) Input_1[h*AT_INPUT_WIDTH*3+w*3+c]) / (1<<7) - 1.0;
-#endif
-
-	pi_ram_write(&HyperRam, (l3_buff), NNInput, (uint32_t) 2*AT_INPUT_SIZE);
-	AT_L2_FREE(0, NNInput, 2*AT_INPUT_SIZE*sizeof(char));
-	AT_L2_FREE(0, Input_1, AT_INPUT_SIZE*sizeof(char));
-
 	// Open the cluster
 	struct pi_device cluster_dev;
 	struct pi_cluster_conf conf;
 	pi_cluster_conf_init(&conf);
 	pi_open_from_conf(&cluster_dev, (void *)&conf);
 	pi_cluster_open(&cluster_dev);
+
+	// Network Constructor
+	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
+	int err_const = AT_CONSTRUCT();
+	if (err_const)
+	{
+	  printf("Graph constructor exited with error: %d\n", err_const);
+	  return 1;
+	}
+	printf("Network Constructor was OK!\n");
+
+	char *ImageName = __XSTR(AT_IMAGE);
+	printf("Reading image from %s\n",ImageName);
+
+	//Reading Image from Bridge
+	img_io_out_t type = IMGIO_OUTPUT_CHAR;
+	#ifdef MODEL_HWC
+	int out_chw = 0;
+	#else
+	int out_chw = 1;
+	#endif
+	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, (unsigned char *) Input_1, AT_INPUT_SIZE*sizeof(char), type, out_chw)) {
+		printf("Failed to load image %s\n", ImageName);
+		pmsis_exit(-1);
+	}
+	printf("Finished reading image %s\n", ImageName);
+
+	// Normalize to [-1:1] float
+	for (int i=AT_INPUT_SIZE; i>=0; i--) Input_1[i] = ((float) (((unsigned char *)Input_1)[i])) / (1<<7) - 1.0;
 
 	// Task setup
 	struct pi_cluster_task *task = pmsis_l2_malloc(sizeof(struct pi_cluster_task));
@@ -140,16 +115,6 @@ int body(void)
 		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
 		return 1;
 	}
-
-	// Network Constructor
-	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
-	int err_const = AT_CONSTRUCT();
-	if (err_const)
-	{
-	  printf("Graph constructor exited with error: %d\n", err_const);
-	  return 1;
-	}
-	printf("Network Constructor was OK!\n");
 
 	// Dispatch task on the cluster 
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
