@@ -1,5 +1,4 @@
-qtune * option --hwc
-qtune * float float16
+qtune --step * scheme=float float_type=bfloat16 hwc=true
 adjust
 fusions --scale8
 nodeoption 0 ALLOCATE 1

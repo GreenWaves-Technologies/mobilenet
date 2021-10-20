@@ -1,4 +1,4 @@
-qtune * float float16
+qtune --step * scheme=float float_type=bfloat16
 adjust
 fusions --scale8
 nodeoption 0 ALLOCATE 1
@@ -8,6 +8,6 @@ set graph_produce_operinfos true
 set graph_monitor_cycles true
 #set graph_const_exec_from_flash true
 #set graph_dump_tensor 4
-set graph_checksum 1
+#set graph_checksum 1
 set graph_trace_exec true
 save_state

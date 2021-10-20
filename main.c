@@ -15,25 +15,11 @@
  */
 
 #include "pmsis.h"
-#include "bsp/flash/hyperflash.h"
-#include "bsp/bsp.h"
-#include "bsp/buffer.h"
+#ifdef HAVE_CAMERA
 #include "bsp/camera/himax.h"
-#include "bsp/ram.h"
-#include "bsp/ram/hyperram.h"
-#include "bsp/display/ili9341.h"
+#endif
 
 #include "main.h"
-
-
-// Comment or Uncomment if using Himax camera or LCD on a board
-//#define HAVE_CAMERA //uncomment if using himax camera
-#ifdef HAVE_CAMERA 
-	#define HAVE_LCD //uncomment if using LCD 
-#endif
-#ifndef HAVE_CAMERA
-	#undef HAVE_LCD // HAVE_LCD can be set only if HAVE_CAMERA is defined
-#endif
 
 /* Defines */
 #define NUM_CLASSES 	1001
@@ -45,43 +31,25 @@
 	#define CAMERA_WIDTH    (324)
 	#define CAMERA_HEIGHT   (244)
 	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
-#endif
+	struct pi_device camera;
+	static int open_camera_himax(struct pi_device *device)
+	{
+	  struct pi_himax_conf cam_conf;
 
+	  pi_himax_conf_init(&cam_conf);
+	  pi_open_from_conf(device, &cam_conf);
+	  if (pi_camera_open(device))
+	    return -1;
 
-#ifdef HAVE_LCD
-	#define LCD_WIDTH    AT_INPUT_WIDTH
-	#define LCD_HEIGHT   AT_INPUT_HEIGHT
+	  return 0;
+
+	}
 #endif
 
 typedef signed short int NETWORK_OUT_TYPE;
-
 // Global Variables
-struct pi_device camera;
-static pi_buffer_t buffer;
-struct pi_device HyperRam;
-
-#ifdef HAVE_LCD
-	struct pi_device display;	
-#endif
-
 L2_MEM NETWORK_OUT_TYPE *ResOut;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
-
-
-#ifdef HAVE_CAMERA
-static int open_camera_himax(struct pi_device *device)
-{
-  struct pi_himax_conf cam_conf;
-
-  pi_himax_conf_init(&cam_conf);
-  pi_open_from_conf(device, &cam_conf);
-  if (pi_camera_open(device))
-    return -1;
-
-  return 0;
-
-}
-#endif
 
 static void RunNetwork()
 {
@@ -116,24 +84,11 @@ int body(void)
 	pi_open_from_conf(&cluster_dev, (void *)&conf);
 	pi_cluster_open(&cluster_dev);
 
-	// Task setup
-	struct pi_cluster_task *task = pmsis_l2_malloc(sizeof(struct pi_cluster_task));
-	if(task==NULL) {
-	  printf("pi_cluster_task alloc Error!\n");
-	  pmsis_exit(-1);
-	}
-	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
-	memset(task, 0, sizeof(struct pi_cluster_task));
-	task->entry = &RunNetwork;
-	task->stack_size = STACK_SIZE;
-	task->slave_stack_size = SLAVE_STACK_SIZE;
-	task->arg = NULL;
-
 	// Allocate the output tensor
 	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	if (ResOut==0) {
 		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
-		return 1;
+	  	pmsis_exit(-1);
 	}
 
 	// Network Constructor
@@ -142,7 +97,7 @@ int body(void)
 	if (err_const)
 	{
 	  printf("Graph constructor exited with error: %d\n", err_const);
-	  return 1;
+	  pmsis_exit(-2);
 	}
 	printf("Network Constructor was OK!\n");
 
@@ -185,11 +140,19 @@ int body(void)
 	#ifdef MODEL_HWC // HWC does not have the image formatter in front
 		for (int i=0; i<AT_INPUT_SIZE; i++) Input_1[i] -= 128;
 	#endif
+
+	// Task setup
+	struct pi_cluster_task task;
+	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
+	task.entry = &RunNetwork;
+	task.stack_size = STACK_SIZE;
+	task.slave_stack_size = SLAVE_STACK_SIZE;
+	task.arg = NULL;
 	// Dispatch task on the cluster 
-	pi_cluster_send_task_to_cl(&cluster_dev, task);
+	pi_cluster_send_task_to_cl(&cluster_dev, &task);
 
 	//Check Results
-	int predicted_class, MaxPrediction = 0;
+	int predicted_class = 0, MaxPrediction = 0;
 	for(int i=0; i<NUM_CLASSES; i++){
 		if (ResOut[i] > MaxPrediction){
 			predicted_class = i;
@@ -218,6 +181,7 @@ int body(void)
 
 	// Netwrok Destructor
 	AT_DESTRUCT();
+	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);
 	pmsis_exit(0);
 

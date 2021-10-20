@@ -15,13 +15,7 @@
  */
 
 #include "pmsis.h"
-#include "bsp/flash/hyperflash.h"
-#include "bsp/bsp.h"
-#include "bsp/ram.h"
-#include "bsp/ram/hyperram.h"
-
 #include "main.h"
-
 
 /* Defines */
 #define NUM_CLASSES 	1001
@@ -47,7 +41,6 @@ static void RunNetwork()
   AT_CNN(ResOut);
   int finish_timer = gap_cl_readhwtimer() - start_timer;
   printf("Runner completed: %d Cycles\n", finish_timer);
-
 }
 
 int body(void)
@@ -96,19 +89,6 @@ int body(void)
 	// Normalize to [-1:1] float
 	for (int i=AT_INPUT_SIZE; i>=0; i--) Input_1[i] = ((float) (((unsigned char *)Input_1)[i])) / (1<<7) - 1.0;
 
-	// Task setup
-	struct pi_cluster_task *task = pmsis_l2_malloc(sizeof(struct pi_cluster_task));
-	if(task==NULL) {
-	  printf("pi_cluster_task alloc Error!\n");
-	  pmsis_exit(-1);
-	}
-	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
-	memset(task, 0, sizeof(struct pi_cluster_task));
-	task->entry = &RunNetwork;
-	task->stack_size = STACK_SIZE;
-	task->slave_stack_size = SLAVE_STACK_SIZE;
-	task->arg = NULL;
-
 	// Allocate the output tensor
 	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	if (ResOut==0) {
@@ -116,11 +96,18 @@ int body(void)
 		return 1;
 	}
 
+	// Task setup
+	struct pi_cluster_task task;
+	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE);
+	task.entry = &RunNetwork;
+	task.stack_size = STACK_SIZE;
+	task.slave_stack_size = SLAVE_STACK_SIZE;
+	task.arg = NULL;
 	// Dispatch task on the cluster 
-	pi_cluster_send_task_to_cl(&cluster_dev, task);
+	pi_cluster_send_task_to_cl(&cluster_dev, &task);
 
 	//Check Results
-	int outclass;
+	int outclass = 0;
 	F16 MaxPrediction = 0;
 	for(int i=0; i<NUM_CLASSES; i++){
 		if (ResOut[i] > MaxPrediction){
@@ -138,7 +125,7 @@ int body(void)
 	{
 		unsigned int TotalCycles = 0, TotalOper = 0;
 		printf("\n");
-		for (int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
+		for (unsigned int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
 			printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], AT_GraphOperInfosNames[i], ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);
 			TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
 		}
@@ -150,6 +137,7 @@ int body(void)
 
 	// Netwrok Destructor
 	AT_DESTRUCT();
+	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);
 	pmsis_exit(0);
 
