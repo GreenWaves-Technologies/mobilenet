@@ -70,6 +70,8 @@
 #elif MODEL_ID==33
 	#include "mobilenet_v3_small_1_0_224_quantKernels.h"
 #elif MODEL_ID==34
+	#include "mcunet_imagenet_bestKernels.h"
+#elif MODEL_ID==35
 	#include "squeezenetKernels.h"
 #endif
 

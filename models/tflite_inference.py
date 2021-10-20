@@ -59,9 +59,11 @@ def main():
 	
 	#read image and resize
 	img = Image.open(args.input_image)
-	img = img.resize((input_details[0]['shape'][1], input_details[0]['shape'][2]))
-	input_array = np.array(img, dtype=np.uint8)
-	input_array = np.reshape(input_array, input_details[0]['shape']).astype(np.uint8)
+	#img = img.resize((input_details[0]['shape'][1], input_details[0]['shape'][2]))
+	input_array = np.array(img, dtype=np.int32)
+	if input_details[0]['dtype'] == np.int8:
+		input_array = input_array - 128
+	input_array = np.reshape(input_array, input_details[0]['shape']).astype(input_details[0]['dtype'])
 	
 	#set interpreter tensor and invoke
 	interpreter.set_tensor(input_details[0]['index'], input_array)

@@ -20,6 +20,9 @@ endif
 ifeq ($(AT_INPUT_WIDTH), 160)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_160.ppm
 endif
+ifeq ($(AT_INPUT_WIDTH), 144)
+	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00047406_144.ppm
+endif
 ifeq ($(AT_INPUT_WIDTH), 128)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
 endif
@@ -27,17 +30,45 @@ ifeq ($(AT_INPUT_WIDTH), 96)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
 endif
 
-io=host
+io=stdout
 
 QUANT_BITS=8
 BUILD_DIR=BUILD
 $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 
 MODEL_SQ8=1 # use scale based quantization (tflite-like)
+MODEL_NE16 ?= 0
+MODEL_HWC ?= 0
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
 TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
+
+ifeq ($(MODEL_NE16), 1)
+	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
+	MODEL_SUFFIX = _NE16
+	APP_CFLAGS += -Wno-discarded-qualifiers
+else
+ifeq ($(MODEL_HWC), 1)
+	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc
+	APP_CFLAGS += -DMODEL_HWC
+endif
+endif
+ifeq ($(MODEL_FP16), 1)
+	ifeq ($(MODEL_HWC), 1)
+		NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc_fp16
+		APP_CFLAGS += -DMODEL_HWC
+	else
+		NNTOOL_SCRIPT = models/nntool_scripts/nntool_script_fp16
+	endif
+	CLUSTER_STACK_SIZE=6096
+	QUANT_BITS = 0
+	MODEL_SUFFIX = _FP16
+	APP_CFLAGS += -DFLOAT16
+	MAIN = main_fp16.c
+else
+	MODEL_SQ8=1 # use scale based quantization (tflite-like)
+endif
 
 include common/model_decl.mk
 
@@ -48,11 +79,11 @@ CLUSTER_STACK_SIZE?=6096
 CLUSTER_SLAVE_STACK_SIZE?=1024
 TOTAL_STACK_SIZE = $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* 7)
 ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
-	FREQ_CL?=50
-	FREQ_FC?=50
-	MODEL_L1_MEMORY=$(shell expr 125000 \- $(TOTAL_STACK_SIZE))
-	MODEL_L2_MEMORY=1300000
-	MODEL_L3_MEMORY=8388608
+	FREQ_CL?=370
+	FREQ_FC?=370
+	MODEL_L1_MEMORY=$(shell expr 128000 \- $(TOTAL_STACK_SIZE))
+	MODEL_L2_MEMORY=1400000
+	MODEL_L3_MEMORY=8000000
 else
 	ifeq '$(TARGET_CHIP)' 'GAP8_V3'
 		FREQ_CL?=175
@@ -73,7 +104,7 @@ MODEL_L3_EXEC=hram
 MODEL_L3_CONST=hflash
 # ram - Model input from ram
 # l2  - Model input from l2 memory
-MODEL_INPUT=ram
+MODEL_INPUT=l2
 
 
 pulpChip = GAP
@@ -85,7 +116,7 @@ APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns
+APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage
 # list of includes file
 APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler
@@ -144,6 +175,7 @@ clean:: clean_model
 
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)
+	$(RM) $(MODEL_GEN_EXE)
 
 TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
