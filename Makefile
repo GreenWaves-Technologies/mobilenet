@@ -47,7 +47,7 @@ TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
 ifeq ($(MODEL_NE16), 1)
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
 	MODEL_SUFFIX = _NE16
-	APP_CFLAGS += -Wno-discarded-qualifiers
+	APP_CFLAGS += -Wno-discarded-qualifiers -DMODEL_NE16
 else
 ifeq ($(MODEL_HWC), 1)
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc
