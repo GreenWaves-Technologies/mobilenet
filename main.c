@@ -197,6 +197,11 @@ int body(void)
 				printf("Wrong results!\n");
 				pmsis_exit(-1);
 			}
+	}	
+	if(strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v2_1_0_224_quant")==0){
+		int MaxPredictionGT = 13627;
+		if(outclass==42 && MaxPrediction==MaxPredictionGT){ printf("Test successful!\n"); pmsis_exit(0);}
+		else { printf("Wrong results!\n"); pmsis_exit(-1); }
 	}
 
 	pmsis_exit(0);
