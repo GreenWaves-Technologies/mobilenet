@@ -142,14 +142,16 @@ int body(void)
 	#endif
 
 	// Task setup
-	struct pi_cluster_task task;
+	struct pi_cluster_task* task = (struct pi_cluster_task*)pmsis_l2_malloc(sizeof(struct pi_cluster_task));
+	task = pi_cluster_task(task,NULL,NULL);
+
 	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
-	task.entry = &RunNetwork;
-	task.stack_size = STACK_SIZE;
-	task.slave_stack_size = SLAVE_STACK_SIZE;
-	task.arg = NULL;
+	task->entry = &RunNetwork;
+	task->stack_size = STACK_SIZE;
+	task->slave_stack_size = SLAVE_STACK_SIZE;
+	task->arg = NULL;
 	// Dispatch task on the cluster 
-	pi_cluster_send_task_to_cl(&cluster_dev, &task);
+	pi_cluster_send_task_to_cl(&cluster_dev, task);
 
 	//Check Results
 	int outclass = 0, MaxPrediction = 0;
