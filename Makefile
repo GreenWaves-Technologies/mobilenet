@@ -111,7 +111,7 @@ MODEL_INPUT=l2
 pulpChip = GAP
 PULP_APP = imagenet
 USE_PMSIS_BSP=1
-PMSIS_OS?=pulpos
+#PMSIS_OS?=pulpos
 
 APP = imagenet
 MAIN ?= main.c
@@ -177,6 +177,9 @@ clean:: clean_model
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)
 	$(RM) $(MODEL_GEN_EXE)
+
+nntool_predict: $(MODEL_STATE)
+	$(NNTOOL) -s models/nntool_scripts/predict_script $(MODEL_STATE)
 
 TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
