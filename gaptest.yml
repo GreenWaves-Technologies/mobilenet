@@ -33,12 +33,12 @@ variants:
     #     chips:
     #         - gap9
     #     flags: MODEL_FP16=1
-    ne16:
-        name: ne16
-        tags:
-            - integration
-            - release
-        duration: standard
-        chips:
-            - gap9
-        flags: MODEL_NE16=1
+    # ne16:
+    #     name: ne16
+    #     tags:
+    #         - integration
+    #         - release
+    #     duration: standard
+    #     chips:
+    #         - gap9
+    #     flags: MODEL_NE16=1
