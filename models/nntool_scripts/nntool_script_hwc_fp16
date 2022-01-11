@@ -10,5 +10,5 @@ set graph_monitor_cycles true
 #set graph_dump_one_node CONV_2D_0_26_fusion
 #set graph_dump_tensor 4
 #set graph_checksum 1
-#set graph_trace_exec true
+set graph_trace_exec true
 save_state
