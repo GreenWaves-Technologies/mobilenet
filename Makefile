@@ -35,9 +35,10 @@ $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 
 MODEL_SQ8=1 # use scale based quantization (tflite-like)
 
+MODEL_FILETYPE?=tflite
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
-TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
+TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).$(MODEL_FILETYPE)
 
 include common/model_decl.mk
 

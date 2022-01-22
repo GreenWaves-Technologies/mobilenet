@@ -9,14 +9,31 @@
 #### Model List #####
 MODEL_ID?=0
 
-
 ifeq ($(MODEL_ID), 0)
-	MODEL_PREFIX?=mobilenet_v1_1_0_224_quant
+	MODEL_PREFIX?=mobilenet_v1_prefix
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
-	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_prefix
+	MODEL_FILETYPE=onnx
 endif
+
+ifeq ($(MODEL_ID), 1)
+	MODEL_PREFIX?=mobilenet_v2_prefix
+	AT_INPUT_WIDTH?=224
+	AT_INPUT_HEIGHT?=224
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_prefix
+	MODEL_FILETYPE=onnx
+endif
+
+#ifeq ($(MODEL_ID), 0)
+	#MODEL_PREFIX?=mobilenet_v1_1_0_224_quant
+	#AT_INPUT_WIDTH?=224
+	#AT_INPUT_HEIGHT?=224
+	#AT_INPUT_COLORS?=3
+	#NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
+#endif
 
 ifeq ($(MODEL_ID), 1)
 	MODEL_PREFIX?=mobilenet_v1_1_0_192_quant

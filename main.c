@@ -26,44 +26,56 @@
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
 #include "bsp/camera/himax.h"
+/*#include "rt/rt_api.h"*/
 #include "bsp/ram.h"
 #include "bsp/display/ili9341.h"
 
 #include "main.h"
 
+#define BAUD 3000000
+uint32_t start;
+struct pi_device uart;
+struct pi_uart_conf uart_conf;
+static uint8_t *rx_buffer;
+RT_L2_DATA uint32_t times[3];
 
-// Comment or Uncomment if using Himax camera or LCD on a board
-//#define HAVE_CAMERA //uncomment if using himax camera
-#ifdef HAVE_CAMERA
-	#define HAVE_LCD //uncomment if using LCD
-#endif
-#ifndef HAVE_CAMERA
-	#undef HAVE_LCD // HAVE_LCD can be set only if HAVE_CAMERA is defined
-#endif
+void uart_read() {
+	pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC0);
+    rx_buffer = (uint8_t *) pmsis_l2_malloc((uint32_t) 2);
+    pi_task_t wait_task = {0};
+    pi_task_block(&wait_task);
+    //printf("tasK_block passed\n");
+    pi_uart_read_async(&uart, rx_buffer, 2, &wait_task);
+    //printf("pi_uart_async_read called, waiting\n");
+    pi_task_wait_on(&wait_task);
+    printf("waiting over, got 1 byte with value %d\n",  rx_buffer[0]);
+	pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC3);
+}
+
+
 
 /* Defines */
-#define NUM_CLASSES 	1001
-#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
-
 #define __XSTR(__s) __STR(__s)
 #define __STR(__s) #__s
-#ifdef HAVE_CAMERA
-	#define CAMERA_WIDTH    (324)
-	#define CAMERA_HEIGHT   (244)
-	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
-#endif
-
-
-#ifdef HAVE_LCD
-	#define LCD_WIDTH    AT_INPUT_WIDTH
-	#define LCD_HEIGHT   AT_INPUT_HEIGHT
-#endif
-
-typedef signed short int NETWORK_OUT_TYPE;
+#define NUM_CLASSES 	32*28*28
+#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
+#define NUM_PIXELS (AT_INPUT_WIDTH*AT_INPUT_HEIGHT)
+#define CAMERA_WIDTH    (324)
+#define CAMERA_HEIGHT   (244)
+#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
 
 // Global Variables
+typedef signed char NETWORK_OUT_TYPE;
+uint32_t start;
+RT_L2_DATA uint32_t times[3];
 struct pi_device camera;
 static pi_buffer_t buffer;
+RT_L2_DATA uint8_t Input_1[CAMERA_WIDTH*CAMERA_HEIGHT];
+L2_MEM NETWORK_OUT_TYPE *ResOut;
+static uint32_t l3_buff;
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
+RT_L2_DATA uint32_t hist[256];
+RT_L2_DATA uint8_t levels[256];
 
 #ifdef USE_QSPI
 struct pi_device QspiRam;
@@ -73,51 +85,67 @@ struct pi_device HyperRam;
 #define EXTERNAL_RAM HyperRam
 #endif
 
-#ifdef HAVE_LCD
-	struct pi_device display;
-#endif
 
-L2_MEM NETWORK_OUT_TYPE *ResOut;
-static uint32_t l3_buff;
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
-
-
-#ifdef HAVE_LCD
-
-static int open_display(struct pi_device *device)
-{
-  struct pi_ili9341_conf ili_conf;
-
-  pi_ili9341_conf_init(&ili_conf);
-  pi_open_from_conf(device, &ili_conf);
-  if (pi_display_open(device))
-    return -1;
-  if (pi_display_ioctl(device, PI_ILI_IOCTL_ORIENTATION, (void *)PI_ILI_ORIENTATION_90))
-    return -1;
-
-  return 0;
+void crop(uint8_t *img) {
+    int ps = 0;
+    for (int i =0; i < CAMERA_HEIGHT; i++) {
+    	for (int j=0; j < CAMERA_WIDTH; j++) {
+    		if (i < AT_INPUT_HEIGHT && j < AT_INPUT_WIDTH) {
+    			img[ps] = img[i*CAMERA_WIDTH+j];
+    			ps++;
+    		}
+    	}
+    }
 }
-#endif
+
+void equalize_histogram(uint8_t *img) {
+    uint8_t pixel_val;
+    uint32_t cumsum, level;
+    for (int i=0; i<256; i++) {hist[i] = 0;}
+
+    for (int i = 0; i < NUM_PIXELS; i++) {
+        pixel_val = img[i];
+        hist[pixel_val]++;
+    }
+    
+    cumsum = 0;
+    for (int i = 0; i < 256; i++) {
+        cumsum += hist[i];
+        level = (cumsum * 255) / NUM_PIXELS;
+        levels[i] = (uint8_t) level;
+    }
+    
+    for (int i = 0; i < NUM_PIXELS; i++) {
+        pixel_val = img[i];
+        img[i] = levels[pixel_val];
+    }
+}
 
 
-#ifdef HAVE_CAMERA
+void capture_img() {
+    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
+    pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);
+    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
+    crop(Input_1);
+    equalize_histogram(Input_1);
+}
 
-static int open_camera_himax(struct pi_device *device)
-{
+void send_img() {
+    for (int i = 0; i < AT_INPUT_HEIGHT; i++){
+        pi_uart_write(&uart, Input_1 + (i * AT_INPUT_WIDTH), AT_INPUT_WIDTH);
+    }
+}
+
+static int open_camera_himax(struct pi_device *device) {
   struct pi_himax_conf cam_conf;
-
   pi_himax_conf_init(&cam_conf);
   pi_open_from_conf(device, &cam_conf);
   if (pi_camera_open(device))
     return -1;
-
   return 0;
-
 }
-#endif
 
-static void RunNetwork()
-{
+static void RunNetwork(){
 printf("Running on cluster\n");
 #ifdef PERF
     printf("Start timer\n");
@@ -128,8 +156,7 @@ printf("Running on cluster\n");
     printf("Runner completed\n");
 }
 
-int body(void)
-{
+int body(void){
 	// Voltage-Frequency settings
 	uint32_t voltage =1200;
 	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
@@ -139,7 +166,7 @@ int body(void)
 		(float)voltage/1000, FREQ_FC, FREQ_CL);
 
 #ifdef USE_QSPI
-        // Initialize the qspiram
+    // Initialize the qspiram
 	struct pi_spiram_conf hyper_conf;
 	pi_spiram_conf_init(&hyper_conf);
 	pi_open_from_conf(&EXTERNAL_RAM, &hyper_conf);
@@ -161,98 +188,56 @@ int body(void)
 #endif
 
 	// Allocate L3 buffer to store input data
-	if (pi_ram_alloc(&EXTERNAL_RAM, &l3_buff, (uint32_t) AT_INPUT_SIZE))
-	{
+	if (pi_ram_alloc(&EXTERNAL_RAM, &l3_buff, (uint32_t) AT_INPUT_SIZE)) {
 		printf("Ram malloc failed !\n");
 		pmsis_exit(-4);
 	}
-
-	// Open LCD
-#ifdef HAVE_LCD
-	if (open_display(&display))
-	{
-		printf("Failed to open display\n");
-		pmsis_exit(-1);
-	}
-#endif
-
-
-#ifdef HAVE_CAMERA
-	// Allocate temp buffer for camera data
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));
-	if(!Input_1){
-		printf("Failed allocation!\n");
-		pmsis_exit(1);
-	}
-
-	// Open Camera
-	if (open_camera_himax(&camera))
-	{
-		printf("Failed to open camera\n");
-		pmsis_exit(-2);
-	}
-
-	// Get an image
-    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-    pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
-    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
-
-    // Image Cropping to [ AT_INPUT_HEIGHT x AT_INPUT_WIDTH ]
-    int ps=0;
-    for(int i =0;i<CAMERA_HEIGHT;i++){
-    	for(int j=0;j<CAMERA_WIDTH;j++){
-    		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
-    			ps++;
-    		}
-    	}
+    
+    //open UART
+    pi_uart_conf_init(&uart_conf);
+    uart_conf.baudrate_bps = BAUD;
+    uart_conf.uart_id = 0;
+    uart_conf.enable_tx = 1;
+    uart_conf.enable_rx = 1;
+    pi_open_from_conf(&uart, &uart_conf);
+    if (pi_uart_open(&uart)) {
+        printf("uart open failed\n");
+    } else {
+    	printf("uart open\n");
     }
 
-#else
-	// Allocate temp buffer for image data
-	uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(AT_INPUT_SIZE*sizeof(char));
-	if(!Input_1){
-		printf("Failed allocation!\n");
-		pmsis_exit(1);
-	}
 
-	char *ImageName = __XSTR(AT_IMAGE);
-	printf("Reading image from %s\n",ImageName);
+	// Allocate temp buffer for camera data
+    /*uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));*/
+    /*if(!Input_1){*/
+        /*printf("Failed allocation!\n");*/
+        /*pmsis_exit(1);*/
+    /*}*/
 
-	//Reading Image from Bridge
-	img_io_out_t type = IMGIO_OUTPUT_CHAR;
-	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, 0)) {
-		printf("Failed to load image %s\n", ImageName);
-		pmsis_exit(-1);
-	}
-	printf("Finished reading image %s\n", ImageName);
-#endif
+    if (open_camera_himax(&camera)) {
+        printf("Failed to open camera\n");
+        pmsis_exit(-2);
+    }
 
-#ifdef HAVE_LCD
-	// Config Buffer for LCD Display
-	buffer.data = Input_1;
-	buffer.stride = 0;
+    /*pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);*/
+    /*pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);*/
+    /*pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);*/
 
-	pi_buffer_init(&buffer, PI_BUFFER_TYPE_L2, Input_1);
-	pi_buffer_set_stride(&buffer, 0);
-	pi_buffer_set_format(&buffer, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, 1, PI_BUFFER_FORMAT_GRAY);
 
-	pi_display_write(&display, &buffer, 0, 0, AT_INPUT_WIDTH, AT_INPUT_HEIGHT);
-#endif
+    /*printf("entered main loop\n");*/
+    /*while (1) {*/
+        /*uart_read();*/
+        /*pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);*/
+        /*pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);*/
+        /*pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);*/
+        /*crop(Input_1);*/
+        /*equalize_histogram(Input_1);*/
 
-	//move input image to L3 Hyperram
-#ifdef HAVE_CAMERA
-	// Copy Single Channel Greyscale to 3 channel RGB: CH0-CH1-CH2
-	pi_ram_write(&EXTERNAL_RAM, (l3_buff), 									Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&EXTERNAL_RAM, (l3_buff+AT_INPUT_WIDTH*AT_INPUT_HEIGHT), 	Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pi_ram_write(&EXTERNAL_RAM, (l3_buff+2*AT_INPUT_WIDTH*AT_INPUT_HEIGHT), Input_1, (uint32_t) AT_INPUT_WIDTH*AT_INPUT_HEIGHT);
-	pmsis_l2_malloc_free(Input_1, CAMERA_SIZE*sizeof(char));
-#else
-	// write greyscale image to RAM
-	pi_ram_write(&EXTERNAL_RAM, (l3_buff), Input_1, (uint32_t) AT_INPUT_SIZE);
-	pmsis_l2_malloc_free(Input_1, AT_INPUT_SIZE*sizeof(char));
-#endif
-
+        /*for(int i =0; i < AT_INPUT_HEIGHT; i++){*/
+            /*pi_uart_write(&uart, Input_1 + (i * AT_INPUT_WIDTH), AT_INPUT_WIDTH);*/
+        /*}*/
+    /*}*/
+	
 	// Open the cluster
 	struct pi_device cluster_dev;
 	struct pi_cluster_conf conf;
@@ -262,7 +247,7 @@ int body(void)
 
 	// Task setup
 	struct pi_cluster_task *task = pmsis_l2_malloc(sizeof(struct pi_cluster_task));
-	if(task==NULL) {
+	if (task==NULL) {
 	  printf("pi_cluster_task alloc Error!\n");
 	  pmsis_exit(-1);
 	}
@@ -283,43 +268,75 @@ int body(void)
 	// Network Constructor
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
 	int err_const = AT_CONSTRUCT();
-	if (err_const)
-	{
-	  printf("Graph constructor exited with error: %d\n", err_const);
-	  return 1;
+	if (err_const) {
+	    printf("Graph constructor exited with error: %d\n", err_const);
+	    return 1;
 	}
 	printf("Network Constructor was OK!\n");
 
-	// Dispatch task on the cluster
-	pi_cluster_send_task_to_cl(&cluster_dev, task);
+    printf("entered main loop\n");
+    while (1) {
+        uart_read();
+        capture_img();
+        
+        if (rx_buffer[0]) {
+            send_img();
+        } 
 
-	//Check Results
-	int outclass, MaxPrediction = 0;
-	for(int i=0; i<NUM_CLASSES; i++){
-		if (ResOut[i] > MaxPrediction){
-			outclass = i;
-			MaxPrediction = ResOut[i];
-		}
-	}
-	printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
-	printf("Predicted class:\t%d\n", outclass);
-	printf("With confidence:\t%d\n", MaxPrediction);
+        //grayscale to rgb
+        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 0 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
+        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 1 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
+        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 2 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
+
+        /*start = rt_time_get_us();*/
+        /*pi_cluster_send_task_to_cl(&cluster_dev, task);*/
+        /*times[0] = rt_time_get_us() - start;*/
+        
+        /*for (int i=0; i < rx_buffer[1]; i++) {*/
+            /*pi_uart_write(&uart, ResOut + i*28*28, 28*28); */
+        /*}*/
+
+        /*pi_uart_write(&uart, times, 12); */
+    }
+
+
+	/*printf("NETWORK_OUT_TYPE is %d bytes\n", sizeof(NETWORK_OUT_TYPE));*/
+    /*start = rt_time_get_us();*/
+	/*pi_cluster_send_task_to_cl(&cluster_dev, task);*/
+    /*times[0] = rt_time_get_us() - start;*/
+    /*printf("forward pass time:\t%d\n", times[0]);*/
+
+
+	/*int outclass, MaxPrediction = 0;*/
+    /*int MinPrediction = ResOut[0];*/
+	/*for(int i=0; i<NUM_CLASSES; i++){*/
+        /*if (ResOut[i] < MinPrediction){*/
+            /*MinPrediction = ResOut[i];*/
+        /*}*/
+		/*if (ResOut[i] > MaxPrediction){*/
+			/*outclass = i;*/
+			/*MaxPrediction = ResOut[i];*/
+		/*}*/
+	/*}*/
+	/*printf("Model :\t%s\n\n", __XSTR(AT_MODEL_PREFIX));*/
+	/*printf("min :\t%d\n", MinPrediction);*/
+	/*printf("max :\t%d\n", MaxPrediction);*/
 
 
 	// Performance counters
-#ifdef PERF
-	{
-		unsigned int TotalCycles = 0, TotalOper = 0;
-		printf("\n");
-		for (int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
-			printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], AT_GraphOperInfosNames[i], ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);
-			TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
-		}
-		printf("\n");
-		printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
-		printf("\n");
-	}
-#endif
+/*#ifdef PERF*/
+	/*{*/
+		/*unsigned int TotalCycles = 0, TotalOper = 0;*/
+		/*printf("\n");*/
+		/*for (int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {*/
+			/*printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], AT_GraphOperInfosNames[i], ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);*/
+			/*TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];*/
+		/*}*/
+		/*printf("\n");*/
+		/*printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);*/
+		/*printf("\n");*/
+	/*}*/
+/*#endif*/
 
 	// Netwrok Destructor
 	AT_DESTRUCT();

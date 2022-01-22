@@ -2,9 +2,11 @@
 #define __IMAGENET_H__
 
 #if MODEL_ID==0
-	#include "mobilenet_v1_1_0_224_quantKernels.h"
+	//#include "mobilenet_v1_1_0_224_quantKernels.h"
+	#include "mobilenet_v1_prefix.h"
 #elif MODEL_ID==1
-	#include "mobilenet_v1_1_0_192_quantKernels.h"
+	//#include "mobilenet_v1_1_0_192_quantKernels.h"
+	#include "mobilenet_v2_prefix.h"
 #elif MODEL_ID==2
 	#include "mobilenet_v1_1_0_160_quantKernels.h"
 #elif MODEL_ID==3
