@@ -57,7 +57,11 @@ void uart_read() {
 /* Defines */
 #define __XSTR(__s) __STR(__s)
 #define __STR(__s) #__s
-#define NUM_CLASSES 	32*28*28
+#define HIDDEN_WIDTH 28
+#define HIDDEN_HEIGHT 28
+#define HIDDEN_CHANNEL 32
+#define SPATIAL_DIM (HIDDEN_WIDTH * HIDDEN_HEIGHT)
+#define NUM_FEATS 	(HIDDEN_CHANNEL * SPATIAL_DIM)
 #define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
 #define NUM_PIXELS (AT_INPUT_WIDTH*AT_INPUT_HEIGHT)
 #define CAMERA_WIDTH    (324)
@@ -259,7 +263,7 @@ int body(void){
 	task->arg = NULL;
 
 	// Allocate the output tensor
-	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
+	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_FEATS*sizeof(NETWORK_OUT_TYPE));
 	if (ResOut==0) {
 		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
 		return 1;
@@ -277,26 +281,36 @@ int body(void){
     printf("entered main loop\n");
     while (1) {
         uart_read();
-        capture_img();
         
+        start = rt_time_get_us();
+        capture_img();
+        times[0] = rt_time_get_us() - start;
+       
+        start = rt_time_get_us();
         if (rx_buffer[0]) {
             send_img();
         } 
+        times[1] = rt_time_get_us() - start;
 
         //grayscale to rgb
-        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 0 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
-        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 1 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
-        /*pi_ram_write(&EXTERNAL_RAM, (l3_buff + 2 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);*/
+        start = rt_time_get_us();
+        start = rt_time_get_us();
+        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 0 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
+        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 1 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
+        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 2 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
+        printf("converting to rgb takes: %d\n", rt_time_get_us() - start);
 
-        /*start = rt_time_get_us();*/
-        /*pi_cluster_send_task_to_cl(&cluster_dev, task);*/
-        /*times[0] = rt_time_get_us() - start;*/
+        start = rt_time_get_us();
+        pi_cluster_send_task_to_cl(&cluster_dev, task);
+        times[2] = rt_time_get_us() - start;
         
-        /*for (int i=0; i < rx_buffer[1]; i++) {*/
-            /*pi_uart_write(&uart, ResOut + i*28*28, 28*28); */
-        /*}*/
+        start = rt_time_get_us();
+        for (int i=0; i < rx_buffer[1]; i++) {
+            pi_uart_write(&uart, ResOut + i*SPATIAL_DIM, SPATIAL_DIM); 
+        }
+        times[1] += rt_time_get_us() - start;
 
-        /*pi_uart_write(&uart, times, 12); */
+        pi_uart_write(&uart, times, 12); 
     }
 
 

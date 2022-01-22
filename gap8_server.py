@@ -29,7 +29,7 @@ class GAP8Server:
         self.MAX_HIDS = MAX_HIDS
         self.SPATIAL_DIM = HID_H * HID_W
         self.img_bytes = self.IMG_W * self.IMG_H
-        self.time_bytes = 0
+        self.time_bytes = 3*4
         
         self.ser = serial.Serial(device,baudrate=self.baudrate, timeout=self.read_timeout)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
