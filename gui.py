@@ -25,26 +25,16 @@ def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
               .reshape(height*nrows, width*ncols))
     return result
 
-def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
-    data = b''
-    while True:
-        part = sock.recv(BUFFER_SIZE)
-        data += part
-        if len(data) == TARGET_SIZE:
-            break
-    return data
-
 
 class GUI:
     def __init__(self, root, gap_client,
             TCP_IP='127.0.0.1', TCP_PORT=5000, 
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
-            MIN_HIDS=2, MAX_HIDS=8,
-            HID_GRID=3, SKIP_HID=2
+            MIN_HIDS=1, MAX_HIDS=32,
+            HID_GRID=6, SKIP_HID=2
     ):
         self.root     = root
-        self.sock     = sock
         self.gap_client = gap_client
         self.MAX_HIDS = MAX_HIDS
         self.MIN_HIDS = MIN_HIDS
@@ -152,19 +142,23 @@ class GUI:
 
         #Create hidden unit slider
         self.state_vars["Num Hids"] = Tk.IntVar()
-        self.state_vars["Num Hids"].set(2)
-        '''
+        self.state_vars["Num Hids"].set(1)
         
-        self.hid_select = Tk.Scale(master = self.bot_frame, label="Hidden Dimension", showvalue=False, length=200, sliderlength=20, from_=self.MIN_HIDS, to=self.MAX_HIDS, tickinterval=self.SKIP_HID, orient=Tk.HORIZONTAL, variable=self.state_vars["Num Hids"])
+        self.hid_select = Tk.Scale(master=self.bot_frame, 
+            label="Hidden Dimension", showvalue=False, length=300, 
+            sliderlength=self.MAX_HIDS, tickinterval=self.SKIP_HID, 
+            orient=Tk.HORIZONTAL, 
+            from_=self.MIN_HIDS, to=self.MAX_HIDS, 
+            variable=self.state_vars["Num Hids"]
+        )
         self.hid_select.set(self.state_vars["Num Hids"].get())
         self.hid_select.pack(side=Tk.LEFT, expand=1, pady=5)
-        '''
-        for val in [2,4,8]:
-            Tk.Radiobutton(master = self.bot_frame, 
-                          text="Use K=%d"%val,
-                          padx = 5, 
-                          variable=self.state_vars["Num Hids"], 
-                          value=val).pack(side=Tk.LEFT, expand=1, pady=5)
+        # for val in [2,4,8]:
+            # Tk.Radiobutton(master = self.bot_frame, 
+                          # text="Use K=%d"%val,
+                          # padx = 5, 
+                          # variable=self.state_vars["Num Hids"], 
+                          # value=val).pack(side=Tk.LEFT, expand=1, pady=5)
         
         #Create a quit button
         self.button_quit = Tk.Button(master = self.bot_frame, text = 'Quit', command = self.quit)
@@ -178,13 +172,13 @@ class GUI:
     #Define refresh function
     #This is the main event loop for displaying updates in the GUI
     def do_refresh(self):
-       
         include_img = self.state_vars['Transmit Image'].get() == 1
         
         #map slider value to the nearest power of 2
         #only a width of 2, 4, and 8 are supported
-        mapping = {2:2, 3:2, 4:4, 5:4, 6:8, 7:8, 8:8}
-        num_channels = mapping[self.state_vars['Num Hids'].get()]
+        # mapping = {2:2, 3:2, 4:4, 5:4, 6:8, 7:8, 8:8}
+        # num_channels = mapping[self.state_vars['Num Hids'].get()]
+        num_channels = self.state_vars['Num Hids'].get()
         self.state_vars['Num Hids'].set(num_channels)
         # control_config['num_channels'] = num_channels
         # control_config['quit'] = False
@@ -195,21 +189,12 @@ class GUI:
         num_bytes += img_bytes
 
         #If we're in the process of closing, don't run refresh
-        if(self.closing):
+        if self.closing:
             return
-        
         
         message = dumps([include_img, num_channels])
         self.gap_client.put((message, num_bytes))
-        print('gap_qin_put')
-        # self.Qcontrol.put(control_config)    
-        # self.sock.send(message)
-
         buff = self.gap_client.get()
-        print('gap_Qout.get')
-    
-
-        # buff = recvall(self.sock, num_bytes, 4096)
 
         img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
@@ -282,7 +267,7 @@ class GUI:
         self.root.after(100, self.do_refresh)
 
 if __name__ == '__main__':
-    TCP_IP = '192.168.0.124'
+    TCP_IP = '192.168.0.105'
     TCP_PORT = 5000
     BUFFER_SIZE = 1024
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -296,6 +281,7 @@ if __name__ == '__main__':
     root = Tk.Tk()
     #gui = GUI(root, sock, gap_Qin, gap_Qout)
     gui = GUI(root, gap_client)
+    
     gap_process.start()
     root.after(200, gui.do_refresh) 
     root.mainloop()
