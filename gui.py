@@ -36,7 +36,7 @@ def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
 
 
 class GUI:
-    def __init__(self, root, sock, gap_Qin=None, gap_Qout=None,
+    def __init__(self, root, gap_client,
             TCP_IP='127.0.0.1', TCP_PORT=5000, 
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
@@ -45,6 +45,7 @@ class GUI:
     ):
         self.root     = root
         self.sock     = sock
+        self.gap_client = gap_client
         self.MAX_HIDS = MAX_HIDS
         self.MIN_HIDS = MIN_HIDS
         self.SKIP_HID = SKIP_HID
@@ -56,8 +57,6 @@ class GUI:
         self.state_vars={}
         self.frame_rate_timer=time.time()
         self.closing  = False;
-        self.gap_Qin = gap_Qin
-        self.gap_Qout = gap_Qout
         
         self.SPATIAL_DIM = HID_H * HID_W
         self.time_bytes = 3*4
@@ -201,12 +200,12 @@ class GUI:
         
         
         message = dumps([include_img, num_channels])
-        self.gap_Qin.put((message, num_bytes))
+        self.gap_client.put((message, num_bytes))
         print('gap_qin_put')
         # self.Qcontrol.put(control_config)    
         # self.sock.send(message)
 
-        buff = self.gap_Qout.get()
+        buff = self.gap_client.get()
         print('gap_Qout.get')
     
 
@@ -289,13 +288,14 @@ if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((TCP_IP, TCP_PORT))
     
-    gap_Qin = Queue()
-    gap_Qout = Queue()
-    gap_client = QClient(sock, gap_Qin, gap_Qout)
+    # gap_Qin = Queue()
+    # gap_Qout = Queue()
+    gap_client = QClient(sock)
     gap_process = Process(target=gap_client.run, args=())
     
     root = Tk.Tk()
-    gui = GUI(root, sock, gap_Qin, gap_Qout)
+    #gui = GUI(root, sock, gap_Qin, gap_Qout)
+    gui = GUI(root, gap_client)
     gap_process.start()
     root.after(200, gui.do_refresh) 
     root.mainloop()

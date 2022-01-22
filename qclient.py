@@ -1,6 +1,7 @@
 import time
 import socket
 from pickle import dumps, loads
+from multiprocessing import Queue
 
 
 def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
@@ -14,22 +15,24 @@ def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
 
 
 class QClient:
-    def __init__(self, sock, Qin, Qout, BUFFER_SIZE=4096):
+    def __init__(self, sock, BUFFER_SIZE=4096):
         self.sock = sock
-        self.Qin = Qin
-        self.Qout = Qout
+        self.Qin = Queue()
+        self.Qout = Queue()
         self.BUFFER_SIZE = BUFFER_SIZE
         
     def run(self):
-        # while self.Qin.qsize() > 0:
-        message, num_bytes = self.Qin.get() 
-        print('qin get')
-        self.sock.send(message)
-        print('message sent')
-        buff = recvall(self.sock, num_bytes, self.BUFFER_SIZE)
-        print('respose recv')
-        self.Qout.put(buff)
-        print('qout put')
+        while True:
+            message, num_bytes = self.get() 
+            self.sock.send(message)
+            buff = recvall(self.sock, num_bytes, self.BUFFER_SIZE)
+            self.put(buff)
+    
+    def put(self, x):
+        self.Qin.put(x)
+
+    def get(self):
+        return self.Qout.get()
             
         
 # if __name__ == '__main__':
