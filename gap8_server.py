@@ -32,9 +32,10 @@ class GAP8Server:
         self.time_bytes = 3*4
         
         self.ser = serial.Serial(device,baudrate=self.baudrate, timeout=self.read_timeout)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((TCP_IP, TCP_PORT))
         
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.TCP_IP, self.TCP_PORT))
+               
         
         # self.control_config = {'include_img': False, 'num_channels': self.MAX_HIDS, 'quit': False}
         # time.sleep(0.1)
@@ -48,11 +49,15 @@ class GAP8Server:
     
     def run(self):
         print("PSR: Starting Python Simple Joint Serial Reader")
-
+        
         self.sock.listen()
         conn, addr = self.sock.accept()
         while True:
+            
             message = conn.recv(self.BUFFER_SIZE)
+            if not message:
+                break
+
             control_config = loads(message) 
             include_img, num_channels = control_config
             print('got config:', control_config)
@@ -99,8 +104,9 @@ class GAP8Server:
             # serv_message = dumps([img, hid, time_vals])
             # conn.send(serv_message)
         
-        self.sock.close()
+        # self.sock.close()
 
 if __name__ == '__main__':
     server = GAP8Server()
-    server.run()
+    while True:
+        server.run()
