@@ -11,6 +11,8 @@ import time
 import numpy as np
 import socket
 from pickle import dumps, loads
+from multiprocessing import Process, Queue
+from qclient import QClient
 
 def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
     array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)
@@ -34,7 +36,7 @@ def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
 
 
 class GUI:
-    def __init__(self, root, sock,
+    def __init__(self, root, sock, gap_Qin=None, gap_Qout=None,
             TCP_IP='127.0.0.1', TCP_PORT=5000, 
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
@@ -54,7 +56,12 @@ class GUI:
         self.state_vars={}
         self.frame_rate_timer=time.time()
         self.closing  = False;
+        self.gap_Qin = gap_Qin
+        self.gap_Qout = gap_Qout
         
+        self.SPATIAL_DIM = HID_H * HID_W
+        self.time_bytes = 3*4
+       
         self.stats={}
         self.stats["cloud_frame_rate"] = []
         self.time_stat_keys=[ "gap8_sensing", "gap8_comm","gap8_compute", "cloud_compute"]
@@ -140,13 +147,13 @@ class GUI:
 
         #Create control check box
         self.state_vars["Transmit Image"] = Tk.IntVar()
-        self.state_vars["Transmit Image"].set(1)
+        self.state_vars["Transmit Image"].set(0)
         self.chk_transmit = Tk.Checkbutton(master = self.bot_frame, text="Send Image", variable=self.state_vars["Transmit Image"])
         self.chk_transmit.pack(side=Tk.LEFT, expand=1, pady=5)
 
         #Create hidden unit slider
         self.state_vars["Num Hids"] = Tk.IntVar()
-        self.state_vars["Num Hids"].set(8)
+        self.state_vars["Num Hids"].set(2)
         '''
         
         self.hid_select = Tk.Scale(master = self.bot_frame, label="Hidden Dimension", showvalue=False, length=200, sliderlength=20, from_=self.MIN_HIDS, to=self.MAX_HIDS, tickinterval=self.SKIP_HID, orient=Tk.HORIZONTAL, variable=self.state_vars["Num Hids"])
@@ -180,38 +187,55 @@ class GUI:
         mapping = {2:2, 3:2, 4:4, 5:4, 6:8, 7:8, 8:8}
         num_channels = mapping[self.state_vars['Num Hids'].get()]
         self.state_vars['Num Hids'].set(num_channels)
-        num_channels = 0
         # control_config['num_channels'] = num_channels
         # control_config['quit'] = False
+        
+        img_bytes = self.IMG_W * self.IMG_H if include_img else 0
+        hid_bytes = self.SPATIAL_DIM * num_channels
+        num_bytes = self.time_bytes + hid_bytes
+        num_bytes += img_bytes
 
         #If we're in the process of closing, don't run refresh
         if(self.closing):
             return
-
+        
+        
         message = dumps([include_img, num_channels])
+        self.gap_Qin.put((message, num_bytes))
+        print('gap_qin_put')
         # self.Qcontrol.put(control_config)    
-        self.sock.send(message)
+        # self.sock.send(message)
+
+        buff = self.gap_Qout.get()
+        print('gap_Qout.get')
     
 
-        vql = recvall(self.sock, self.IMG_W * self.IMG_H, 4096)
-        img = np.frombuffer(vql, dtype=np.uint8, count=-1, offset=0)
-        img = img.reshape(224, 224) 
-        print(len(vql))
+        # buff = recvall(self.sock, num_bytes, 4096)
+
+        img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
+        hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
+        time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
+        hid = hid.reshape(num_channels, self.HID_H, self.HID_W)
+        print(time_vals)
+
+
         # val = self.Qin.get()
 
         #Update image
-        self.im_image.set_data(img)
-        self.canvas_image.draw()  
+        if include_img:
+            img = img.reshape(self.IMG_H, self.IMG_W)
+            self.im_image.set_data(img)
+            self.canvas_image.draw()  
     
-        #Update hids
-        # hid_im = im_tools.gallery(val["hid"], ncols=self.HID_GRID, nrows=self.HID_GRID)
-        # self.im_hids.set_data(hid_im)
-        # self.canvas_hids.draw()
+        # Update hids
+        hid_im = gallery(hid, ncols=self.HID_GRID, nrows=self.HID_GRID)
+        self.im_hids.set_data(hid_im)
+        self.canvas_hids.draw()
     
         #Updat times
-        # proc_time = time.time() - self.frame_rate_timer
-        # print('GUI: approx fps = ', 1/proc_time)
-        # self.frame_rate_timer = time.time() 
+        proc_time = time.time() - self.frame_rate_timer
+        print('GUI: approx fps = ', 1/proc_time)
+        self.frame_rate_timer = time.time() 
             
         #Update framerate graph
         # self.stats["cloud_frame_rate"].append(1/proc_time) 
@@ -264,7 +288,14 @@ if __name__ == '__main__':
     BUFFER_SIZE = 1024
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((TCP_IP, TCP_PORT))
+    
+    gap_Qin = Queue()
+    gap_Qout = Queue()
+    gap_client = QClient(sock, gap_Qin, gap_Qout)
+    gap_process = Process(target=gap_client.run, args=())
+    
     root = Tk.Tk()
-    gui = GUI(root, sock)
+    gui = GUI(root, sock, gap_Qin, gap_Qout)
+    gap_process.start()
     root.after(200, gui.do_refresh) 
     root.mainloop()
