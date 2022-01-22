@@ -6,14 +6,36 @@ from matplotlib import pylab as plt
 from scipy import ndimage
 import tkinter as Tk
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import im_tools
+# import im_tools
 import time
 import numpy as np
 import socket
+from pickle import dumps, loads
 
-class GUI;
+def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
+    array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)
+    nindex, height, width = array.shape
+    n_extra = ncols*nrows - nindex
+    array = np.concatenate((array,pad_value*np.ones((n_extra,height, width))))
+    # want result.shape = (height*nrows, width*ncols, intensity)
+    result = (array.reshape(nrows, ncols, height, width)
+              .swapaxes(1,2)
+              .reshape(height*nrows, width*ncols))
+    return result
+
+def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
+    data = b''
+    while True:
+        part = sock.recv(BUFFER_SIZE)
+        data += part
+        if len(data) == TARGET_SIZE:
+            break
+    return data
+
+
+class GUI:
     def __init__(self, root, sock,
-            TCP_IP='127.0.0.1', TCP_PORT=5000, BUFFER_SIZE=1024,
+            TCP_IP='127.0.0.1', TCP_PORT=5000, 
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
             MIN_HIDS=2, MAX_HIDS=8,
@@ -78,7 +100,7 @@ class GUI;
         self.canvas_image.get_tk_widget().pack(side=Tk.LEFT, pady=5, padx=5, fill=Tk.BOTH, expand=1)
 
         #Create canvas to Diaply Hids
-        tmp_hids = im_tools.gallery(np.zeros((8,self.HID_W,self.HID_H)), ncols=self.HID_GRID, nrows=self.HID_GRID)
+        tmp_hids = gallery(np.zeros((8,self.HID_W,self.HID_H)), ncols=self.HID_GRID, nrows=self.HID_GRID)
         fig_hids = plt.figure(figsize=(4,4))
         ax             = plt.gca()
         self.im_hids        = ax.imshow(tmp_hids,cmap="jet") 
@@ -150,79 +172,84 @@ class GUI;
     #Define refresh function
     #This is the main event loop for displaying updates in the GUI
     def do_refresh(self):
-    
-        control_config = {'include_img': self.state_vars['Transmit Image'].get() == 1}
+       
+        include_img = self.state_vars['Transmit Image'].get() == 1
         
         #map slider value to the nearest power of 2
         #only a width of 2, 4, and 8 are supported
         mapping = {2:2, 3:2, 4:4, 5:4, 6:8, 7:8, 8:8}
         num_channels = mapping[self.state_vars['Num Hids'].get()]
         self.state_vars['Num Hids'].set(num_channels)
-        control_config['num_channels'] = num_channels
-        control_config['quit'] = False
+        num_channels = 0
+        # control_config['num_channels'] = num_channels
+        # control_config['quit'] = False
 
         #If we're in the process of closing, don't run refresh
         if(self.closing):
             return
 
+        message = dumps([include_img, num_channels])
         # self.Qcontrol.put(control_config)    
-        self.sock.send(control_config) 
+        self.sock.send(message)
     
 
-        vql = recvall(self.sock)
+        vql = recvall(self.sock, self.IMG_W * self.IMG_H, 4096)
+        img = np.frombuffer(vql, dtype=np.uint8, count=-1, offset=0)
+        img = img.reshape(224, 224) 
+        print(len(vql))
         # val = self.Qin.get()
 
         #Update image
-        self.im_image.set_data(val["img"])
+        self.im_image.set_data(img)
         self.canvas_image.draw()  
     
         #Update hids
-        hid_im = im_tools.gallery(val["hid"], ncols=self.HID_GRID, nrows=self.HID_GRID)
-        self.im_hids.set_data(hid_im)
-        self.canvas_hids.draw()
+        # hid_im = im_tools.gallery(val["hid"], ncols=self.HID_GRID, nrows=self.HID_GRID)
+        # self.im_hids.set_data(hid_im)
+        # self.canvas_hids.draw()
     
         #Updat times
-        proc_time = time.time() - self.frame_rate_timer
-        print('GUI: approx fps = ', 1/proc_time)
-        self.frame_rate_timer = time.time() 
+        # proc_time = time.time() - self.frame_rate_timer
+        # print('GUI: approx fps = ', 1/proc_time)
+        # self.frame_rate_timer = time.time() 
             
         #Update framerate graph
-        self.stats["cloud_frame_rate"].append(1/proc_time) 
-        frame_count = len(self.stats["cloud_frame_rate"])
-        if(frame_count>20):
-            x = np.arange(frame_count-20,frame_count)
-            y = self.stats["cloud_frame_rate"][-20:]
-            minx = x[0]
-            maxx = x[-1]
-        else:
-            x = np.arange(frame_count)
-            y = self.stats["cloud_frame_rate"]
-            minx = 0
-            maxx = 19
-        if(frame_count>1):
-            self.line_fr.set_data(x,y)
-            self.ax_fr.axis([minx, maxx, 0, 1.05*np.max(y)])
-            self.canvas_fr.draw()
+        # self.stats["cloud_frame_rate"].append(1/proc_time) 
+        # frame_count = len(self.stats["cloud_frame_rate"])
+        # if(frame_count>20):
+            # x = np.arange(frame_count-20,frame_count)
+            # y = self.stats["cloud_frame_rate"][-20:]
+            # minx = x[0]
+            # maxx = x[-1]
+        # else:
+            # x = np.arange(frame_count)
+            # y = self.stats["cloud_frame_rate"]
+            # minx = 0
+            # maxx = 19
+        # if(frame_count>1):
+            # self.line_fr.set_data(x,y)
+            # self.ax_fr.axis([minx, maxx, 0, 1.05*np.max(y)])
+            # self.canvas_fr.draw()
 
         #Update times graph
-        ys=[]
-        for key in self.time_stat_keys:
-            self.stats[key].append(val["time"][key])
+        # ys=[]
+        # for key in self.time_stat_keys:
+            # self.stats[key].append(val["time"][key])
             
-            if(frame_count>20):
-                ys.append( self.stats[key][-20:] )
-            else:
-                ys.append( self.stats[key])
+            # if(frame_count>20):
+                # ys.append( self.stats[key][-20:] )
+            # else:
+                # ys.append( self.stats[key])
         
-        if(frame_count>1):
-            self.ax_time.cla()
-            self.ax_time.stackplot(x,ys)
-            self.ax_time.set_ylim(-1, 1.2*np.max(np.sum(ys,axis=0)))
-            plt.title("Process Times")
-            plt.ylabel('Time (s)')
-            plt.legend(self.time_stat_names,ncol=4,loc="lower center")
-            plt.grid(True);
-            self.canvas_time.draw()
+        # if(frame_count>1):
+            # self.ax_time.cla()
+            # self.ax_time.stackplot(x,ys)
+            # self.ax_time.set_ylim(-1, 1.2*np.max(np.sum(ys,axis=0)))
+            # plt.title("Process Times")
+            # plt.ylabel('Time (s)')
+            # plt.legend(self.time_stat_names,ncol=4,loc="lower center")
+            # plt.grid(True);
+            # self.canvas_time.draw()
         
 
         #print("GUI: Run times:",val["time"])
@@ -232,7 +259,7 @@ class GUI;
         self.root.after(100, self.do_refresh)
 
 if __name__ == '__main__':
-    TCP_IP = '127.0.0.1'
+    TCP_IP = '192.168.0.124'
     TCP_PORT = 5000
     BUFFER_SIZE = 1024
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
