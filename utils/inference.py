@@ -67,12 +67,13 @@ def get_input_shape(engine):
     binding = engine[0]
     assert engine.binding_is_input(binding)
     binding_dims = engine.get_binding_shape(binding)
-    if len(binding_dims) == 4:
-        return tuple(binding_dims[2:])
-    elif len(binding_dims) == 3:
-        return tuple(binding_dims[1:])
-    else:
-        raise ValueError('bad dims of binding %s: %s' % (binding, str(binding_dims)))
+    return binding_dims
+    # if len(binding_dims) == 4:
+        # return tuple(binding_dims[2:])
+    # elif len(binding_dims) == 3:
+        # return tuple(binding_dims[1:])
+    # else:
+        # raise ValueError('bad dims of binding %s: %s' % (binding, str(binding_dims)))
 
 def allocate_buffers(engine):
     """Allocates all host/device in/out buffers required for an engine."""
@@ -85,7 +86,6 @@ def allocate_buffers(engine):
         binding_dims = engine.get_binding_shape(binding)
         if len(binding_dims) == 2:
             binding_dims = (binding_dims[0], binding_dims[1], 1, 1)
-        print(binding, binding_dims)
         if len(binding_dims) == 4:
             # explicit batch case (TensorRT 7+)
             size = trt.volume(binding_dims)

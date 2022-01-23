@@ -16,6 +16,7 @@ class NanoServer:
         self.TCP_PORT = TCP_PORT
         self.buffer_size = buffer_size
         self.num_bytes = np.prod(self.detector.input_shape)
+        print(self.num_bytes)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((self.TCP_IP, self.TCP_PORT))
 
@@ -36,7 +37,7 @@ class NanoServer:
             conn.sendall(buff)
             
 if __name__ == '__main__':
-    detector = TRTDetector('/root/gap_runner/suffix.trt')
+    detector = TRTDetector('/root/gap_runner/models/tflite_models/suffix.trt')
     server = NanoServer(detector)
     while True:
         server.run()

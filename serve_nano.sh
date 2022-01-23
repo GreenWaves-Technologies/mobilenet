@@ -1,3 +1,8 @@
+if [ ! -f "$PWD/models/tflite_models/suffix.trt" ]; then
+    /usr/src/tensorrt/bin/trtexec --onnx=$PWD/models/tflite_models/suffix.onnx --saveEngine=$PWD/models/tflite_models/suffix.trt --fp16 --verbose
+fi
+
+
 sudo docker run -it --rm \
     --network host \
     --privileged \
