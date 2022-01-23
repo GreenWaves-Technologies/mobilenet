@@ -10,7 +10,7 @@
 MODEL_ID?=0
 
 ifeq ($(MODEL_ID), 0)
-	MODEL_PREFIX?=mobilenet_v1_prefix
+	MODEL_PREFIX?=prefix
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
