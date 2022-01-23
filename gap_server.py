@@ -15,7 +15,7 @@ class GAPServer:
                  IMG_W=224, IMG_H=224, 
                  HID_W=28, HID_H=28, MAX_HIDS=8
     ):
-        subprocess.Popen(['bash', '/root/gap_runner/run.sh'])
+        subprocess.Popen(['bash', '/root/gap_runner/run_gap.sh'])
         self.TCP_IP = TCP_IP
         self.TCP_PORT = TCP_PORT
         self.BUFFER_SIZE = BUFFER_SIZE
