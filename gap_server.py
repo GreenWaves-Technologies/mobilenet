@@ -5,7 +5,7 @@ import numpy as np
 from pickle import dumps, loads
 import subprocess
 
-class GAP8Server:
+class GAPServer:
     def __init__(self, 
                  TCP_IP='0.0.0.0', TCP_PORT=5000,
                  BUFFER_SIZE=1024,
@@ -107,6 +107,6 @@ class GAP8Server:
         # self.sock.close()
 
 if __name__ == '__main__':
-    server = GAP8Server()
+    server = GAPServer()
     while True:
         server.run()

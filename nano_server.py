@@ -1,22 +1,10 @@
-import serial
 import time
 import socket
 import numpy as np
 from pickle import dumps, loads
 import subprocess
-
-def recvall(sock, TARGET_SIZE=4096, BUFFER_SIZE=4096):
-    data = b''
-    while True:
-        part = sock.recv(BUFFER_SIZE)
-        if not part:
-            return None
-
-        data += part
-        if len(data) == TARGET_SIZE:
-            break
-    return data
-
+from utils.network import recvall
+from trt_detector import TRTDetector
 
 class NanoServer:
     def __init__(self, detector,
@@ -37,7 +25,7 @@ class NanoServer:
         self.sock.bind((self.TCP_IP, self.TCP_PORT))
 
     def run(self):
-        print("PSR: Starting Python Simple Joint Serial Reader")
+        print("nano server started")
         
         self.sock.listen()
         conn, addr = self.sock.accept()
@@ -53,6 +41,8 @@ class NanoServer:
             conn.sendall(buff)
             
 if __name__ == '__main__':
-    server = NanoServer()
-    while True:
-        server.run()
+    detector = TRTDetector('/root/gap_runner/suffix.trt')
+    print(detector.input_shape)
+    # server = NanoServer(detector)
+    # while True:
+        # server.run()
