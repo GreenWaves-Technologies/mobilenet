@@ -45,7 +45,7 @@ class GUI:
         self.IMG_H    = IMG_H 
         self.state_vars={}
         self.frame_rate_timer=time.time()
-        self.closing  = False;
+        self.closing  = False
         
         self.SPATIAL_DIM = HID_H * HID_W
         self.time_bytes = 3*4
@@ -266,21 +266,14 @@ class GUI:
         self.root.after(100, self.do_refresh)
 
 if __name__ == '__main__':
-    TCP_IP = '192.168.0.105'
-    TCP_PORT = 5000
-    BUFFER_SIZE = 1024
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((TCP_IP, TCP_PORT))
-    
-    # gap_Qin = Queue()
-    # gap_Qout = Queue()
-    gap_client = QClient(sock)
-    gap_process = Process(target=gap_client.run, args=())
+    gap_client = QClient(
+        server_ip='192.168.0.105'
+        server_port=5000,
+        buffer_size=4096
+    )
     
     root = Tk.Tk()
-    #gui = GUI(root, sock, gap_Qin, gap_Qout)
     gui = GUI(root, gap_client)
     
-    gap_process.start()
     root.after(200, gui.do_refresh) 
     root.mainloop()
