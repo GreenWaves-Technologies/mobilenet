@@ -3,4 +3,4 @@ sudo docker run -it --rm \
     --privileged \
     -v $PWD:/root/gap_runner \
     gap_sdk \
-    python -u /root/gap_runner/gap8_server.py
+    python -u /root/gap_runner/gap_server.py
