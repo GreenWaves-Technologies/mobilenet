@@ -6,13 +6,12 @@ from matplotlib import pylab as plt
 from scipy import ndimage
 import tkinter as Tk
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-# import im_tools
 import time
 import numpy as np
 import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
-from qclient import QClient
+from utils.qclient import QClient
 
 def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
     array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)
