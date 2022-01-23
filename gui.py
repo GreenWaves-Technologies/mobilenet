@@ -11,7 +11,7 @@ import numpy as np
 import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
-from utils.qclient import QClient
+from utils.network import QClient
 
 def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
     array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)

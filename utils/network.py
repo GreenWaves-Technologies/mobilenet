@@ -4,6 +4,8 @@ def recvall(sock, target_size=4096, buffer_size=4096):
     data = b''
     while True:
         part = sock.recv(buffer_size)
+        if not part:
+            return None
         data += part
         if len(data) == target_size:
             break
