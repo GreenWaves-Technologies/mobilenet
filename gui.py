@@ -267,7 +267,7 @@ class GUI:
 
 if __name__ == '__main__':
     gap_client = QClient(
-        server_ip='192.168.0.105'
+        server_ip='192.168.0.105',
         server_port=5000,
         buffer_size=4096
     )

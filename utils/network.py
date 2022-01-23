@@ -1,4 +1,4 @@
-import sock
+import socket
 from multiprocessing import Queue, Process
 
 def recvall(sock, target_size=4096, buffer_size=4096):
