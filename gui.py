@@ -31,7 +31,8 @@ class GUI:
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
             MIN_HIDS=1, MAX_HIDS=32,
-            HID_GRID=6, SKIP_HID=2
+            HID_GRID=6, SKIP_HID=2,
+            num_dets=50
     ):
         self.root     = root
         self.gap_client = gap_client
@@ -47,6 +48,9 @@ class GUI:
         self.state_vars={}
         self.frame_rate_timer=time.time()
         self.closing  = False
+        self.num_dets = num_dets
+        dummy_dets = np.zeros((self.num_dets, 6), dtype=np.uint16)
+        self.num_dets_bytes = len(dumps(dummy_dets))
         
         self.SPATIAL_DIM = HID_H * HID_W
         self.time_bytes = 3*4
@@ -205,10 +209,11 @@ class GUI:
         hid = buff2numpy(hid, dtype=np.int8)
         time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
 
-        self.nano_client.put((hid, 100*7*4))
+        self.nano_client.put((hid, self.num_dets_bytes))
         print("GUI: sent message to nano")
-        detections = self.nano_client.get()
+        dets = self.nano_client.get()
         print("GUI: got message from nano")
+        print(dets)
         
         # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)

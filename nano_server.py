@@ -53,8 +53,8 @@ class NanoServer:
             detections = self.detector.detect(channels)
             for det in detections:
                 print(det, CLASSES[det[-1]])
-            # buff = dumps(dets)
-            # conn.sendall(buff)
+            buff = dumps(dets)
+            conn.sendall(buff)
             
 if __name__ == '__main__':
     detector = TRTDetector('/root/gap_runner/models/tflite_models/suffix.trt')
