@@ -159,7 +159,7 @@ class GUI:
 
         #Create control check box
         self.state_vars["Transmit Image"] = Tk.IntVar()
-        self.state_vars["Transmit Image"].set(0)
+        self.state_vars["Transmit Image"].set(1)
         self.chk_transmit = Tk.Checkbutton(master = self.bot_frame, text="Send Image", variable=self.state_vars["Transmit Image"])
         self.chk_transmit.pack(side=Tk.LEFT, expand=1, pady=5)
 
@@ -247,9 +247,9 @@ class GUI:
         # hid = hid.reshape(-1, num_channels)
         # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
          
-        hid = hid.reshape(1, 32, self.HID_H, self.HID_W)
-        hid = torch.from_numpy(hid).float()
-        hid = Fixer()(hid).numpy().squeeze()
+        hid = hid.reshape(32, self.HID_H, self.HID_W).astype(np.float32)
+        # hid = torch.from_numpy(hid).float()
+        # hid = Fixer()(hid).numpy().squeeze()
 
         # hid = hid.transpose((2,0,1))
         # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
