@@ -50,10 +50,11 @@ class NanoServer:
             channels = buff2numpy(message, dtype=np.int8)
             channels = channels.reshape(self.detector.input_shape)
             channels = channels.astype(np.float32) * 0.04724409
-            detections = self.detector.detect(channels)
-            for det in detections:
+            dets = self.detector.detect(channels)
+            for det in dets:
                 print(det, CLASSES[det[-1]])
             buff = dumps(dets)
+            print('nano: sending bytes', len(buff))
             conn.sendall(buff)
             
 if __name__ == '__main__':
