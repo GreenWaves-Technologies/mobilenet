@@ -26,7 +26,7 @@ def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
 
 
 class GUI:
-    def __init__(self, root, gap_client,
+    def __init__(self, root, gap_client, nano_client,
             TCP_IP='127.0.0.1', TCP_PORT=5000, 
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
@@ -35,6 +35,7 @@ class GUI:
     ):
         self.root     = root
         self.gap_client = gap_client
+        self.nano_client = nano_client
         self.MAX_HIDS = MAX_HIDS
         self.MIN_HIDS = MIN_HIDS
         self.SKIP_HID = SKIP_HID
@@ -141,7 +142,7 @@ class GUI:
 
         #Create hidden unit slider
         self.state_vars["Num Hids"] = Tk.IntVar()
-        self.state_vars["Num Hids"].set(1)
+        self.state_vars["Num Hids"].set(32)
         
         self.hid_select = Tk.Scale(master=self.bot_frame, 
             label="Hidden Dimension", showvalue=False, length=300, 
@@ -194,6 +195,7 @@ class GUI:
         message = dumps([include_img, num_channels])
         self.gap_client.put((message, num_bytes))
         buff = self.gap_client.get()
+        print("GUI: got message from gap side")
         
         img = buff[0:img_bytes]
         hid = buff[img_bytes:img_bytes+hid_bytes]
@@ -203,8 +205,10 @@ class GUI:
         hid = buff2numpy(hid, dtype=np.int8)
         time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
 
-        nano_client.put((hid, 100*7*4))
-        detections = nano_client.get()
+        self.nano_client.put((hid, 100*7*4))
+        print("GUI: sent message to nano")
+        detections = self.nano_client.get()
+        print("GUI: got message from nano")
         
         # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
@@ -285,15 +289,14 @@ if __name__ == '__main__':
         buffer_size=4096
     )
 
-    # nano_client = QClient(
-        # server_ip='192.168.0.185',
-        # server_port=5001,
-        # buffer_size=4096
-    # )
-
+    nano_client = QClient(
+        server_ip='192.168.0.185',
+        server_port=5001,
+        buffer_size=4096
+    )
     
     root = Tk.Tk()
-    gui = GUI(root, gap_client)
+    gui = GUI(root, gap_client, nano_client)
     
     root.after(200, gui.do_refresh) 
     root.mainloop()
