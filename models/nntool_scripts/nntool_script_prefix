@@ -7,7 +7,7 @@ set input_norm_func 'x: (x-114)/57'
 #set input_norm_func 'x: (x-128)/128'
 #aquant -f 8 --allow_asymmetric --force_output_size 8 images/calibration/*
 #aquant --allow_asymmetric images/calibration/*
-aquant images/calibration/*
+aquant --allow_asymmetric images/calibration/*
 
 imageformat input_1 rgb888 offset_int8
 #set input_norm_func 'x: x'
