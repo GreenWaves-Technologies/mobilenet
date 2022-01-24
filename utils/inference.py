@@ -44,7 +44,7 @@ def nms_boxes(detections, iou_threshold=0.5):
         intersection = width1 * height1
         union = (areas[i] + areas[ordered[1:]] - intersection)
         iou = intersection / union
-        indexes = np.where(iou <= nms_threshold)[0]
+        indexes = np.where(iou <= iou_threshold)[0]
         ordered = ordered[indexes + 1]
 
     keep = np.array(keep)

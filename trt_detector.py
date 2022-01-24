@@ -56,8 +56,10 @@ class TRTDetector(object):
     #[[x, y, w, h, box_confidence, class_id, class_prob],
 
     def postprocess(self, outputs, img_w, img_h, input_shape):
-        scale_x = img_w / input_shape[1]
-        scale_y = img_h / input_shape[0]
+        img_w, img_h = 224, 224
+        # scale_x = img_w / input_shape[1]
+        # scale_y = img_h / input_shape[0]
+        scale_x, scale_y = 1, 1
         
         detections = outputs[0].reshape(1, -1, 7)[0] 
         x1, y1, x2, y2 = np.split(detections[:, 0:4], 4, axis=-1)
@@ -89,18 +91,25 @@ class TRTDetector(object):
         ww = nms_detections[:, 2].reshape(-1, 1)
         hh = nms_detections[:, 3].reshape(-1, 1)
         boxes = np.concatenate([xx, yy, xx+ww, yy+hh], axis=1) + 0.5
-        boxes = boxes.astype(np.int)
         scores = nms_detections[:, 4] * nms_detections[:, 6]
         classes = nms_detections[:, 5]
         
         # clip x1, y1, x2, y2 within original image
         boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 0, img_w-1)
         boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 0, img_h-1)
+
+        detections = np.concatenate((
+            boxes, 
+            scores[:, np.newaxis] * 100, #[0,1] -> [0,100]
+            classes[:, np.newaxis]), 
+        axis=1)
+
+        detections = detections.astype(np.uint16)
         
         # if self.cuda_ctx:
             # self.cuda_ctx.pop()
 
-        return boxes, scores, classes
+        return detections
         
         
     def detect(self, img):
@@ -127,10 +136,10 @@ class TRTDetector(object):
         timing['model'] = time.time() - start
 
         start = time.time()
-        boxes, scores, classes = self.postprocess(
+        detections = self.postprocess(
             outputs, img.shape[1], img.shape[0], 
             input_shape=self.input_shape
         )
         timing['postprocess'] = time.time() - start
         self.timings.append(timing)
-        return boxes, scores, classes
+        return detections
