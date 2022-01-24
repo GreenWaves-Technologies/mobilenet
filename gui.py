@@ -12,7 +12,10 @@ import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
 from utils.network import QClient, buff2numpy
+from utils.fix import Fixer
 import cv2
+import torch
+
 
 CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
@@ -184,6 +187,8 @@ class GUI:
         self.button_quit = Tk.Button(master = self.bot_frame, text = 'Quit', command = self.quit)
         self.button_quit.pack(side=Tk.LEFT,expand=1, pady=5)
 
+        self.frame_count = 0
+
     #Define quit function
     def quit(self, *args):
         pass
@@ -237,9 +242,20 @@ class GUI:
         # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
         # time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
-        hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
-        # hid = (hid - 0) * 0.04724409 #unquantize
-        hid = (hid - -128) * 0.02352941 #unquantize
+        
+        # hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
+        # hid = hid.reshape(-1, num_channels)
+        # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
+         
+        hid = hid.reshape(1, 32, self.HID_H, self.HID_W)
+        hid = torch.from_numpy(hid).float()
+        hid = Fixer()(hid).numpy().squeeze()
+
+        # hid = hid.transpose((2,0,1))
+        # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
+        
+        hid = (hid - 0) * 0.04724409 #unquantize
+        # hid = (hid - -128) * 0.02352941 #unquantize
         print(hid.max(), hid.min())
         print(time_vals)
 
@@ -253,6 +269,9 @@ class GUI:
             img = img.reshape(self.IMG_H, self.IMG_W, 1)
             img = np.concatenate([img]*3, axis=-1)
         
+        np.save('./record/img%s.jpg' % self.frame_count, img)
+        np.save('./record/hid%s.jpg' % self.frame_count, hid)
+        self.frame_count += 1
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         for det in dets:
