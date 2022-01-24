@@ -202,6 +202,9 @@ class GUI:
         img = buff2numpy(img, dtype=np.uint8)
         hid = buff2numpy(hid, dtype=np.int8)
         time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
+
+        nano_client.put((hid, 100*7*4))
+        detections = nano_client.get()
         
         # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)

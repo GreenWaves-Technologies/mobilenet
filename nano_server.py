@@ -5,6 +5,7 @@ from pickle import dumps, loads
 import subprocess
 from utils.network import recvall
 from trt_detector import TRTDetector
+from utils.network import buff2numpy
 
 class NanoServer:
     def __init__(self, detector,
@@ -29,12 +30,14 @@ class NanoServer:
             message = recvall(self.sock, self.num_bytes, self.buffer_size)
             if not message:
                 break
-
-            channels = loads(message) 
             
+            channels = buff2numpy(channels, dtype=np.int8)
+            channels = channels.reshape(self.detector.input_shape)
+            channels = channels.astype(np.float32) * 0.04724409
             dets = self.detector.detect(channels)
-            buff = dumps(dets)
-            conn.sendall(buff)
+            print(dets, dets.shape)) 
+            # buff = dumps(dets)
+            # conn.sendall(buff)
             
 if __name__ == '__main__':
     detector = TRTDetector('/root/gap_runner/models/tflite_models/suffix.trt')
