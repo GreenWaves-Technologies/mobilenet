@@ -11,7 +11,7 @@ import numpy as np
 import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
-from utils.network import QClient
+from utils.network import QClient, buff2numpy
 
 def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
     array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)
@@ -194,11 +194,21 @@ class GUI:
         message = dumps([include_img, num_channels])
         self.gap_client.put((message, num_bytes))
         buff = self.gap_client.get()
-
-        img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
-        hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
-        time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
-        hid = hid.reshape(num_channels, self.HID_H, self.HID_W)
+        
+        img = buff[0:img_bytes]
+        hid = buff[img_bytes:img_bytes+hid_bytes]
+        time_vals = buff[img_bytes+hid_bytes:]
+        
+        img = buff2numpy(img, dtype=np.uint8)
+        hid = buff2numpy(hid, dtype=np.int8)
+        time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
+        
+        # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
+        # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
+        # time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
+        hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
+        hid = (hid - 0) * 0.04724409 #unquantize
+        print(hid.max(), hid.min())
         print(time_vals)
 
 
@@ -271,6 +281,13 @@ if __name__ == '__main__':
         server_port=5000,
         buffer_size=4096
     )
+
+    # nano_client = QClient(
+        # server_ip='192.168.0.185',
+        # server_port=5001,
+        # buffer_size=4096
+    # )
+
     
     root = Tk.Tk()
     gui = GUI(root, gap_client)

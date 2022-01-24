@@ -1,5 +1,10 @@
 import socket
 from multiprocessing import Queue, Process
+import numpy as np
+
+def buff2numpy(buff, dtype=np.uint8):
+    arr = np.frombuffer(buff, dtype=dtype, count=-1, offset=0)
+    return arr
 
 def recvall(sock, target_size=4096, buffer_size=4096):
     data = b''
