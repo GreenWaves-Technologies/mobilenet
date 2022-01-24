@@ -12,6 +12,22 @@ import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
 from utils.network import QClient, buff2numpy
+import cv2
+
+CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+               'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+               'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+               'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
+               'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+               'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+               'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+               'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+               'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+               'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+               'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
+               'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+               'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',
+               'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
 
 def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
     array = np.pad(array,[[0,0],[1,1],[1,1]],'constant',constant_values=pad_value)
@@ -216,12 +232,14 @@ class GUI:
         dets = self.nano_client.get()
         print("GUI: got message from nano")
         print(dets)
+        dets = loads(dets)
         
         # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
         # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
         # time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
         hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
-        hid = (hid - 0) * 0.04724409 #unquantize
+        # hid = (hid - 0) * 0.04724409 #unquantize
+        hid = (hid - -128) * 0.02352941 #unquantize
         print(hid.max(), hid.min())
         print(time_vals)
 
@@ -229,10 +247,38 @@ class GUI:
         # val = self.Qin.get()
 
         #Update image
-        if include_img:
-            img = img.reshape(self.IMG_H, self.IMG_W)
-            self.im_image.set_data(img)
-            self.canvas_image.draw()  
+        if not include_img:
+            img = np.zeros((self.IMG_H, self.IMG_W, 3), dtype=np.uint8)
+        else:
+            img = img.reshape(self.IMG_H, self.IMG_W, 1)
+            img = np.concatenate([img]*3, axis=-1)
+        
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        for det in dets:
+            box = det[0:4]
+            score = det[4]
+            if score < 30:
+                continue
+            label = CLASSES[det[5]]
+            img = cv2.rectangle(img,
+                (box[0], box[1]),
+                (box[2], box[3]),
+                (255,255,255),
+                thickness=1
+            )
+            img = cv2.putText(img,
+                '%s: %s' % (label, score),
+                (box[0], box[1] - 4),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255,255,255),
+                1
+            )
+
+
+        self.im_image.set_data(img)
+        self.canvas_image.draw()  
     
         # Update hids
         hid_im = gallery(hid, ncols=self.HID_GRID, nrows=self.HID_GRID)
