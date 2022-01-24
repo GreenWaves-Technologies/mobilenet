@@ -49,7 +49,9 @@ class NanoServer:
             print('nano: got message of len', len(message))
             channels = buff2numpy(message, dtype=np.int8)
             channels = channels.reshape(self.detector.input_shape)
-            channels = channels.astype(np.float32) * 0.04724409
+            channels = channels.astype(np.float32)
+            channels = (channels - -128) * 0.02352941
+            # channels = channels.astype(np.float32) * 0.04724409
             dets = self.detector.detect(channels)
             for det in dets:
                 print(det, CLASSES[det[-1]])
