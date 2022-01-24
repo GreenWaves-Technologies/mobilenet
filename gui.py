@@ -208,9 +208,11 @@ class GUI:
         img = buff2numpy(img, dtype=np.uint8)
         hid = buff2numpy(hid, dtype=np.int8)
         time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
-
+        
+        self.num_dets_bytes = 758
         self.nano_client.put((hid, self.num_dets_bytes))
         print("GUI: sent message to nano")
+        print('GUI:  requested bytes', self.num_dets_bytes)
         dets = self.nano_client.get()
         print("GUI: got message from nano")
         print(dets)
