@@ -76,7 +76,6 @@ struct pi_device camera;
 static pi_buffer_t buffer;
 RT_L2_DATA uint8_t Input_1[CAMERA_WIDTH*CAMERA_HEIGHT];
 L2_MEM NETWORK_OUT_TYPE *ResOut;
-static uint32_t l3_buff;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
 RT_L2_DATA uint32_t hist[256];
 RT_L2_DATA uint8_t levels[256];
@@ -156,7 +155,7 @@ printf("Running on cluster\n");
     gap_cl_starttimer();
     gap_cl_resethwtimer();
 #endif
-    AT_CNN((unsigned char *) l3_buff, ResOut);
+    AT_CNN((unsigned char *) Input_1, ResOut);
     printf("Runner completed\n");
 }
 
@@ -191,13 +190,7 @@ int body(void){
 	}
 #endif
 
-	// Allocate L3 buffer to store input data
-	if (pi_ram_alloc(&EXTERNAL_RAM, &l3_buff, (uint32_t) AT_INPUT_SIZE)) {
-		printf("Ram malloc failed !\n");
-		pmsis_exit(-4);
-	}
-    
-    //open UART
+    // open UART
     pi_uart_conf_init(&uart_conf);
     uart_conf.baudrate_bps = BAUD;
     uart_conf.uart_id = 0;
@@ -210,38 +203,11 @@ int body(void){
     	printf("uart open\n");
     }
 
-
-	// Allocate temp buffer for camera data
-    /*uint8_t* Input_1 = (uint8_t*) pmsis_l2_malloc(CAMERA_SIZE*sizeof(char));*/
-    /*if(!Input_1){*/
-        /*printf("Failed allocation!\n");*/
-        /*pmsis_exit(1);*/
-    /*}*/
-
     if (open_camera_himax(&camera)) {
         printf("Failed to open camera\n");
         pmsis_exit(-2);
     }
 
-    /*pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);*/
-    /*pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);*/
-    /*pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);*/
-
-
-    /*printf("entered main loop\n");*/
-    /*while (1) {*/
-        /*uart_read();*/
-        /*pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);*/
-        /*pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);*/
-        /*pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);*/
-        /*crop(Input_1);*/
-        /*equalize_histogram(Input_1);*/
-
-        /*for(int i =0; i < AT_INPUT_HEIGHT; i++){*/
-            /*pi_uart_write(&uart, Input_1 + (i * AT_INPUT_WIDTH), AT_INPUT_WIDTH);*/
-        /*}*/
-    /*}*/
-	
 	// Open the cluster
 	struct pi_device cluster_dev;
 	struct pi_cluster_conf conf;
@@ -292,14 +258,6 @@ int body(void){
         } 
         times[1] = rt_time_get_us() - start;
 
-        //grayscale to rgb
-        start = rt_time_get_us();
-        start = rt_time_get_us();
-        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 0 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
-        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 1 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
-        pi_ram_write(&EXTERNAL_RAM, (l3_buff + 2 * NUM_PIXELS), Input_1, (uint32_t) NUM_PIXELS);
-        printf("converting to rgb takes: %d\n", rt_time_get_us() - start);
-
         start = rt_time_get_us();
         pi_cluster_send_task_to_cl(&cluster_dev, task);
         times[2] = rt_time_get_us() - start;
@@ -313,44 +271,6 @@ int body(void){
         pi_uart_write(&uart, times, 12); 
     }
 
-
-	/*printf("NETWORK_OUT_TYPE is %d bytes\n", sizeof(NETWORK_OUT_TYPE));*/
-    /*start = rt_time_get_us();*/
-	/*pi_cluster_send_task_to_cl(&cluster_dev, task);*/
-    /*times[0] = rt_time_get_us() - start;*/
-    /*printf("forward pass time:\t%d\n", times[0]);*/
-
-
-	/*int outclass, MaxPrediction = 0;*/
-    /*int MinPrediction = ResOut[0];*/
-	/*for(int i=0; i<NUM_CLASSES; i++){*/
-        /*if (ResOut[i] < MinPrediction){*/
-            /*MinPrediction = ResOut[i];*/
-        /*}*/
-		/*if (ResOut[i] > MaxPrediction){*/
-			/*outclass = i;*/
-			/*MaxPrediction = ResOut[i];*/
-		/*}*/
-	/*}*/
-	/*printf("Model :\t%s\n\n", __XSTR(AT_MODEL_PREFIX));*/
-	/*printf("min :\t%d\n", MinPrediction);*/
-	/*printf("max :\t%d\n", MaxPrediction);*/
-
-
-	// Performance counters
-/*#ifdef PERF*/
-	/*{*/
-		/*unsigned int TotalCycles = 0, TotalOper = 0;*/
-		/*printf("\n");*/
-		/*for (int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {*/
-			/*printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], AT_GraphOperInfosNames[i], ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);*/
-			/*TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];*/
-		/*}*/
-		/*printf("\n");*/
-		/*printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);*/
-		/*printf("\n");*/
-	/*}*/
-/*#endif*/
 
 	// Netwrok Destructor
 	AT_DESTRUCT();
