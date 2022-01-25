@@ -254,8 +254,8 @@ class GUI:
         # hid = hid.transpose((2,0,1))
         # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
         
-        hid = (hid - 0) * 0.04724409 #unquantize
-        # hid = (hid - -128) * 0.02352941 #unquantize
+        # hid = (hid - 0) * 0.04724409 #unquantize
+        hid = (hid - -128) * 0.02352941 #unquantize
         print(hid.max(), hid.min())
         print(time_vals)
 
@@ -277,13 +277,13 @@ class GUI:
         for det in dets:
             box = det[0:4]
             score = det[4]
-            if score < 30:
+            if score < 10:
                 continue
             label = CLASSES[det[5]]
             img = cv2.rectangle(img,
                 (box[0], box[1]),
                 (box[2], box[3]),
-                (255,255,255),
+                (255,255,0),
                 thickness=1
             )
             img = cv2.putText(img,
@@ -291,7 +291,7 @@ class GUI:
                 (box[0], box[1] - 4),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (255,255,255),
+                (255,255,0),
                 1
             )
 
