@@ -26,18 +26,54 @@
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
 #include "bsp/camera/himax.h"
-/*#include "rt/rt_api.h"*/
 #include "bsp/ram.h"
 #include "bsp/display/ili9341.h"
 
 #include "main.h"
 
+
+
+
+
+/* Defines */
 #define BAUD 3000000
-uint32_t start;
+#define __XSTR(__s) __STR(__s)
+#define __STR(__s) #__s
+#define HIDDEN_WIDTH 28
+#define HIDDEN_HEIGHT 28
+#define HIDDEN_CHANNEL 32
+#define SPATIAL_DIM (HIDDEN_WIDTH * HIDDEN_HEIGHT)
+#define NUM_FEATS 	(HIDDEN_CHANNEL * SPATIAL_DIM)
+#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
+#define NUM_PIXELS (AT_INPUT_WIDTH*AT_INPUT_HEIGHT)
+#define CAMERA_WIDTH    (324)
+#define CAMERA_HEIGHT   (244)
+#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
+typedef signed char NETWORK_OUT_TYPE;
+
+// Global Variables
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
+L2_MEM NETWORK_OUT_TYPE *ResOut;
+RT_L2_DATA uint32_t hist[256];
+RT_L2_DATA uint32_t times[3];
+RT_L2_DATA uint8_t Input_1[CAMERA_WIDTH*CAMERA_HEIGHT];
+RT_L2_DATA uint8_t levels[256];
+static pi_buffer_t buffer;
+static pi_task_t task;
+static uint8_t *rx_buffer;
+struct pi_device camera;
 struct pi_device uart;
 struct pi_uart_conf uart_conf;
-static uint8_t *rx_buffer;
-RT_L2_DATA uint32_t times[3];
+uint32_t start;
+uint32_t start;
+
+#ifdef USE_QSPI
+struct pi_device QspiRam;
+#define EXTERNAL_RAM QspiRam
+#else
+struct pi_device HyperRam;
+#define EXTERNAL_RAM HyperRam
+#endif
 
 void uart_read() {
 	pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC0);
@@ -51,43 +87,6 @@ void uart_read() {
     printf("waiting over, got 1 byte with value %d\n",  rx_buffer[0]);
 	pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC3);
 }
-
-
-
-/* Defines */
-#define __XSTR(__s) __STR(__s)
-#define __STR(__s) #__s
-#define HIDDEN_WIDTH 28
-#define HIDDEN_HEIGHT 28
-#define HIDDEN_CHANNEL 32
-#define SPATIAL_DIM (HIDDEN_WIDTH * HIDDEN_HEIGHT)
-#define NUM_FEATS 	(HIDDEN_CHANNEL * SPATIAL_DIM)
-#define AT_INPUT_SIZE 	(AT_INPUT_WIDTH*AT_INPUT_HEIGHT*AT_INPUT_COLORS)
-#define NUM_PIXELS (AT_INPUT_WIDTH*AT_INPUT_HEIGHT)
-#define CAMERA_WIDTH    (324)
-#define CAMERA_HEIGHT   (244)
-#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
-
-// Global Variables
-typedef signed char NETWORK_OUT_TYPE;
-uint32_t start;
-RT_L2_DATA uint32_t times[3];
-struct pi_device camera;
-static pi_buffer_t buffer;
-RT_L2_DATA uint8_t Input_1[CAMERA_WIDTH*CAMERA_HEIGHT];
-L2_MEM NETWORK_OUT_TYPE *ResOut;
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
-RT_L2_DATA uint32_t hist[256];
-RT_L2_DATA uint8_t levels[256];
-
-#ifdef USE_QSPI
-struct pi_device QspiRam;
-#define EXTERNAL_RAM QspiRam
-#else
-struct pi_device HyperRam;
-#define EXTERNAL_RAM HyperRam
-#endif
-
 
 void crop(uint8_t *img) {
     int ps = 0;
@@ -125,12 +124,27 @@ void equalize_histogram(uint8_t *img) {
 }
 
 
-void capture_img() {
+static void cam_handler(void *arg) {
+    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
+}
+
+void capture_img_async() {
+    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
+    pi_task_callback(&task, cam_handler, NULL);
+    pi_camera_capture_async(&camera, Input_1, CAMERA_WIDTH * CAMERA_HEIGHT, &task);
+    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
+    pi_task_wait_on(&task);
+    crop(Input_1);
+    /*equalize_histogram(Input_1);*/
+}
+
+
+void capture_img_sync() {
     pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
     pi_camera_capture(&camera, Input_1, (uint32_t) CAMERA_SIZE);
     pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
     crop(Input_1);
-    equalize_histogram(Input_1);
+    /*equalize_histogram(Input_1);*/
 }
 
 void send_img() {
@@ -140,15 +154,17 @@ void send_img() {
 }
 
 static int open_camera_himax(struct pi_device *device) {
-  struct pi_himax_conf cam_conf;
-  pi_himax_conf_init(&cam_conf);
-  pi_open_from_conf(device, &cam_conf);
-  if (pi_camera_open(device))
-    return -1;
-  return 0;
+    struct pi_himax_conf cam_conf;
+    pi_himax_conf_init(&cam_conf);
+    pi_open_from_conf(device, &cam_conf);
+    if (pi_camera_open(device))
+        return -1;
+    pi_camera_control(&camera, PI_CAMERA_CMD_AEG_INIT, 0);
+    rt_time_wait_us(1000000); //wait AEG init (takes ~100 ms)
+    return 0;
 }
 
-static void RunNetwork(){
+static void RunNetwork() {
 printf("Running on cluster\n");
 #ifdef PERF
     printf("Start timer\n");
@@ -188,6 +204,7 @@ int body(void){
 		printf("Error ram open !\n");
 		pmsis_exit(-3);
 	}
+    printf("hyperrram init complete\n");
 #endif
 
     // open UART
@@ -249,7 +266,7 @@ int body(void){
         uart_read();
         
         start = rt_time_get_us();
-        capture_img();
+        capture_img_async();
         times[0] = rt_time_get_us() - start;
        
         start = rt_time_get_us();
@@ -259,7 +276,9 @@ int body(void){
         times[1] = rt_time_get_us() - start;
 
         start = rt_time_get_us();
-        pi_cluster_send_task_to_cl(&cluster_dev, task);
+        if (rx_buffer[1] > 0) { //only do forward pass if we want > 0 channels
+            pi_cluster_send_task_to_cl(&cluster_dev, task);
+        }
         times[2] = rt_time_get_us() - start;
         
         start = rt_time_get_us();
