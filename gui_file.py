@@ -15,6 +15,8 @@ from utils.network import QClient, buff2numpy
 from utils.fix import Fixer
 import cv2
 import torch
+import os
+import pickle
 
 
 CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -45,8 +47,7 @@ def gallery(array, ncols=3, nrows=3, pad=1, pad_value=0):
 
 
 class GUI:
-    def __init__(self, root, gap_client, nano_client,
-            TCP_IP='127.0.0.1', TCP_PORT=5000, 
+    def __init__(self, root,
             IMG_W=224, IMG_H=224, 
             HID_W=28, HID_H=28,
             MIN_HIDS=1, MAX_HIDS=32,
@@ -54,8 +55,6 @@ class GUI:
             num_dets=50
     ):
         self.root     = root
-        self.gap_client = gap_client
-        self.nano_client = nano_client
         self.MAX_HIDS = MAX_HIDS
         self.MIN_HIDS = MIN_HIDS
         self.SKIP_HID = SKIP_HID
@@ -70,6 +69,7 @@ class GUI:
         self.num_dets = num_dets
         dummy_dets = np.zeros((self.num_dets, 6), dtype=np.uint16)
         self.num_dets_bytes = len(dumps(dummy_dets))
+        self.path = os.path.join(os.environ['HOME'], 'record/')
         
         self.SPATIAL_DIM = HID_H * HID_W
         self.time_bytes = 3*4
@@ -197,82 +197,26 @@ class GUI:
     #Define refresh function
     #This is the main event loop for displaying updates in the GUI
     def do_refresh(self):
-        include_img = self.state_vars['Transmit Image'].get() == 1
-        
-        #map slider value to the nearest power of 2
-        #only a width of 2, 4, and 8 are supported
-        # mapping = {2:2, 3:2, 4:4, 5:4, 6:8, 7:8, 8:8}
-        # num_channels = mapping[self.state_vars['Num Hids'].get()]
-        num_channels = self.state_vars['Num Hids'].get()
-        self.state_vars['Num Hids'].set(num_channels)
-        # control_config['num_channels'] = num_channels
-        # control_config['quit'] = False
-        
-        img_bytes = self.IMG_W * self.IMG_H if include_img else 0
-        hid_bytes = self.SPATIAL_DIM * num_channels
-        num_bytes = self.time_bytes + hid_bytes
-        num_bytes += img_bytes
+        fname = '%s/frame_%05.0f.pkl' % (self.path, self.frame_count)
+        while not os.path.isfile(fname):
+            time.sleep(0.01)
 
-        #If we're in the process of closing, don't run refresh
-        if self.closing:
-            return
-        
-        message = dumps([include_img, num_channels])
-        self.gap_client.put((message, num_bytes))
-        buff = self.gap_client.get()
-        print("GUI: got message from gap side")
-        
-        img = buff[0:img_bytes]
-        hid = buff[img_bytes:img_bytes+hid_bytes]
-        time_vals = buff[img_bytes+hid_bytes:]
-        
-        img = buff2numpy(img, dtype=np.uint8)
-        hid = buff2numpy(hid, dtype=np.int8)
-        time_vals = buff2numpy(time_vals, dtype=np.uint32) * 10**-6
-        
-        self.num_dets_bytes = 758
-        self.nano_client.put((hid, self.num_dets_bytes))
-        print("GUI: sent message to nano")
-        print('GUI:  requested bytes', self.num_dets_bytes)
-        dets = self.nano_client.get()
-        print("GUI: got message from nano")
-        print(dets)
-        dets = loads(dets)
-        
-        # img = np.frombuffer(buff[0:img_bytes], dtype=np.uint8, count=-1, offset=0)
-        # hid = np.frombuffer(buff[img_bytes:img_bytes+hid_bytes], dtype=np.int8, count=-1, offset=0)
-        # time_vals = np.frombuffer(buff[img_bytes+hid_bytes:], dtype=np.uint32) * 10**-6
-        
-        # hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
-        # hid = hid.reshape(-1, num_channels)
-        # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
-         
-        hid = hid.reshape(32, self.HID_H, self.HID_W).astype(np.float32)
-        # hid = torch.from_numpy(hid).float()
-        # hid = Fixer()(hid).numpy().squeeze()
+        with open(fname, 'rb') as f:
+            data = pickle.load(f)
+            # data = np.load(f, allow_pickle=True)
 
-        # hid = hid.transpose((2,0,1))
-        # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
+        img = data['img']
+        hid = data['hid'][0]
+        dets = data['dets']
         
-        # hid = (hid - 0) * 0.04724409 #unquantize
-        hid = (hid - -128) * 0.02352941 #unquantize
-        print(hid.max(), hid.min())
-        print(time_vals)
-
-
-        # val = self.Qin.get()
-
+                
+        
         #Update image
-        if not include_img:
-            img = np.zeros((self.IMG_H, self.IMG_W, 3), dtype=np.uint8)
-        else:
+        if img is not None:
             img = img.reshape(self.IMG_H, self.IMG_W, 1)
             print(img.mean(), img.std())
             img = np.concatenate([img]*3, axis=-1)
         
-        np.save('./record/img%s.jpg' % self.frame_count, img)
-        np.save('./record/hid%s.jpg' % self.frame_count, hid)
-        self.frame_count += 1
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         for det in dets:
@@ -352,25 +296,13 @@ class GUI:
         #print("GUI: Run times:",val["time"])
         
         print("GUI: gui has refresed")
+        self.frame_count += 1
             
         self.root.after(100, self.do_refresh)
 
 if __name__ == '__main__':
-    gap_client = QClient(
-        server_ip='192.168.0.105',
-        server_port=5000,
-        buffer_size=4096
-    )
-
-    nano_client = QClient(
-        # server_ip='192.168.0.185',
-        server_ip='192.168.0.245',
-        server_port=5001,
-        buffer_size=4096
-    )
-    
     root = Tk.Tk()
-    gui = GUI(root, gap_client, nano_client)
+    gui = GUI(root)
     
     root.after(200, gui.do_refresh) 
     root.mainloop()
