@@ -269,8 +269,8 @@ class GUI:
             print(img.mean(), img.std())
             img = np.concatenate([img]*3, axis=-1)
         
-        np.save('./record/img%s.jpg' % self.frame_count, img)
-        np.save('./record/hid%s.jpg' % self.frame_count, hid)
+        # np.save('./record/img%s.jpg' % self.frame_count, img)
+        # np.save('./record/hid%s.jpg' % self.frame_count, hid)
         self.frame_count += 1
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
