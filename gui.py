@@ -12,7 +12,6 @@ import socket
 from pickle import dumps, loads
 from multiprocessing import Process, Queue
 from utils.network import QClient, buff2numpy
-from utils.fix import Fixer
 import cv2
 import torch
 
