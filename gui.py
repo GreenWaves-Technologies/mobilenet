@@ -164,7 +164,7 @@ class GUI:
 
         #Create hidden unit slider
         self.state_vars["Num Hids"] = Tk.IntVar()
-        self.state_vars["Num Hids"].set(32)
+        self.state_vars["Num Hids"].set(8)
         
         self.hid_select = Tk.Scale(master=self.bot_frame, 
             label="Hidden Dimension", showvalue=False, length=300, 
@@ -246,7 +246,7 @@ class GUI:
         # hid = hid.reshape(-1, num_channels)
         # hid = hid.reshape(self.HID_H, self.HID_W, num_channels)
          
-        hid = hid.reshape(32, self.HID_H, self.HID_W).astype(np.float32)
+        hid = hid.reshape(num_channels, self.HID_H, self.HID_W).astype(np.float32)
         # hid = torch.from_numpy(hid).float()
         # hid = Fixer()(hid).numpy().squeeze()
 
