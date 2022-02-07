@@ -31,7 +31,8 @@ class NanoServer:
         self.TCP_IP = TCP_IP
         self.TCP_PORT = TCP_PORT
         self.buffer_size = buffer_size
-        self.num_bytes = np.prod(self.detector.input_shape)
+        #self.num_bytes = np.prod(self.detector.input_shape)
+        self.num_bytes = 8*28*28
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((self.TCP_IP, self.TCP_PORT))
 
@@ -48,9 +49,13 @@ class NanoServer:
             
             print('nano: got message of len', len(message))
             channels = buff2numpy(message, dtype=np.int8)
-            channels = channels.reshape(self.detector.input_shape)
+            channels = channels.reshape(8, 28, 28)
             channels = channels.astype(np.float32)
             channels = (channels - -128) * 0.02352941
+            
+            z_channels = np.zeros([32-8, 28, 28], dtype=np.float32)
+            channels = np.concatenate([channels, z_channels], axis=0)
+            channels = np.expand_dims(channels, axis=0) #1 C H W
             # channels = channels.astype(np.float32) * 0.04724409
             dets = self.detector.detect(channels)
             for det in dets:
