@@ -21,6 +21,7 @@ while True:
         if len(content) == 0:
             continue
         
+        client.send(b'\x01\x02\x03\x04')
         if int(content[1]) != 0 and not start:
             continue
         elif int(content[1]) == 0:

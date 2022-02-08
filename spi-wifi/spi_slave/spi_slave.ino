@@ -21,13 +21,16 @@
 #include <WiFiUdp.h>
 
 //CRC8 Global Variables
-#define DI 0x07
-static unsigned char crc8Table[256];
+//#define DI 0x07
+//static unsigned char crc8Table[256];
+
+const uint16_t port = 8584;
+const char *host = "192.168.0.215";
+
+const char *ssid = "APT27";
+const char *pass = "ABCabc123##";
 
 volatile bool interrupted = false;
-volatile bool transmittable = false;
-volatile uint8_t test_data = 0x00;
-volatile uint32_t interruptCounter = 0;
 
 static uint32_t lowbit = 5;
 static uint32_t highbit = 4;
@@ -39,7 +42,6 @@ static uint8_t tcpBuffer[BUFFERSIZE];
 static uint8_t packetBuffer[32];
 volatile int bufferLength = 0;
 volatile int packetLength = 0;
-volatile uint8_t crc = 0x00;
 
 #define PACKET_TO_TRANSMIT 125
 volatile uint8_t totalPacketToTransmit = 0;
@@ -97,7 +99,7 @@ void setup() {
     //Connect to WIFI
     Serial.println("Connecting...\n");
     WiFi.mode(WIFI_STA);
-    WiFi.begin("APT27", "ABCabc123##"); //WIFI SSID and Password
+    WiFi.begin(ssid, pass); //WIFI SSID and Password
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
@@ -106,15 +108,14 @@ void setup() {
     Serial.println("Connected to WiFi AP successful!");
     
     //Connect to Server Socket
-    const uint16_t port = 8585;
-    const char *host = "192.168.0.215";
-
     Serial.println("Connect to TCP Socket");
     while(!tcpClient.connect(host, port)) {
         Serial.println("TCP Connection to host failed");
         delay(500);
     }
     Serial.println("Connected to server successful!");
+
+    // Does not use NoDelay or Sync, which degrades performance
 //    tcpClient.setNoDelay(1);
 //    tcpClient.setSync(1);
 
@@ -125,24 +126,14 @@ void setup() {
 //        SPISlave.setStatus(0xFFFFFFFF);
         digitalWrite(highbit, LOW);
         digitalWrite(lowbit, LOW);
-
-//        uint8_t crc = crc8(data, 2, 32);
-//        if(crc != data[1]) {
-//            digitalWrite(lowbit, LOW);
-//            digitalWrite(highbit, HIGH);
-//            return;
-//        }
         memcpy((uint8_t *)packetBuffer, data, 32);
         interrupted = true;
         
     });
 
     SPI1C2 |= 1 << SPIC2MISODM_S;
-    SPISlave.setStatus(0xFFFFFFFF);
+    SPISlave.setStatus(0xFAFBFCFD);
     SPISlave.begin(4);
-  //  
-    
-
 }
 
 static unsigned long prev_time = 0;
@@ -151,42 +142,19 @@ static unsigned long cur_time = 0;
 void loop() {
     if(interrupted) {
 
-        unsigned long startTime = micros();
+//        unsigned long startTime = micros();
         if(indexes == 25) {
             indexes = 0;
         }
-//        for(int i = 2; i < 32; i++) {
-//            Serial.print(packetBuffer[i], HEX);
-//            Serial.print(" ");
-//        }
-//        Serial.println(interruptCounter);
-//        interruptCounter++;
-        
-//        uint8_t crc_check = 0x00;
-//        for(int i = 2; i < 32; i++) {
-//            crc_check ^= packetBuffer[i];
-//        }
-//          SPISlave.setStatus(0xFAFBFCFD);
-//          Serial.printf("%d, %d, %d, %d\n", packetBuffer[0], packetBuffer[1], indexes, packetBuffer[1] > indexes);
-//          delay(5000);
-//        crc_check = 0x00;
-//        Serial.printf("%x, %x", crc, crc_check);
-        
-//        if(crc_check != packetBuffer[1]) {
-//            digitalWrite(highbit, HIGH);
-//            digitalWrite(lowbit, LOW);
-//            return;
-//        }
+//      
         if(packetBuffer[1] < indexes) {
 //            Serial.printf("Hit Duplicate Packet %d, %d\n", packetBuffer[1], indexes);
-//            SPISlave.setStatus(0xFEFEFEFE);
             digitalWrite(highbit, LOW);
             digitalWrite(lowbit, HIGH);
             interrupted = false;
             return;
         } else if(packetBuffer[1] > indexes) {
 //            Serial.printf("Hit Larget Packet %d, %d\n", packetBuffer[1], indexes);
-//            SPISlave.setStatus(0xFCFCFCFC);
             digitalWrite(highbit, HIGH);
             digitalWrite(lowbit, LOW);
             interrupted = false;
@@ -195,15 +163,7 @@ void loop() {
 
 //        Serial.printf("Buffer Processed.\n");
         packetLength = (uint32_t)packetBuffer[0];
-//        if(packetLength + bufferLength + 30 < BUFFERSIZE) {
-//            memcpy(tcpBuffer + bufferLength, packetBuffer + 2, packetLength);
-//            bufferLength += packetLength;
-//        } else if(packetLength + bufferLength + 30 >= BUFFERSIZE && packetLength + bufferLength < BUFFERSIZE) {
-//            memcpy(tcpBuffer + bufferLength, packetBuffer + 2, packetLength);
-//            bufferLength += packetLength;
-//            transmittable = true;
-////            Serial.println(bufferLength);
-//        }
+
         memcpy(tcpBuffer + bufferLength, packetBuffer + 2, packetLength);
         bufferLength += packetLength;
         totalPacketToTransmit += 1;
@@ -222,26 +182,30 @@ void loop() {
                     delay(0);
                 }
               
-//                tcpClient.write(tcpBuffer, BUFFERSIZE);
                 tcpClient.write(tcpBuffer, bufferLength);
-    //          tcpClient.flush();
     //          Serial.println("TCP Transmission Finished");  
             }
     //
-            if(tcpClient.available()) {
+            if(tcpClient.connected() && tcpClient.available()) {
                 for(int i = 0; i < 4; i++) {
                     commands[i] = tcpClient.read();
                 }
+//                Serial.printf("Commands: %x, %x, %x, %x\n", commands[0], commands[1], commands[2], commands[3]);
+                uint32_t commandStatus = commands[0] | (commands[1] << 8) | (commands[2] << 16) | (commands[3] << 24);
+                SPISlave.setStatus(commandStatus);
+//                Serial.printf("Set New Status: %d\n", commandStatus);
             }
+            
             bufferLength = 0;
             totalPacketToTransmit = 0;
-            unsigned long endTime = micros();
-            Serial.println(endTime - startTime);
+//            unsigned long endTime = micros();
+//            Serial.println(endTime - startTime);
         }
 
         indexes += 1;
+        interrupted = false;
+
         digitalWrite(highbit, LOW);
         digitalWrite(lowbit, HIGH);
-        interrupted = false;
     }
 }

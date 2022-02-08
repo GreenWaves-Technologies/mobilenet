@@ -1,13 +1,8 @@
 
 #include "pmsis.h"
+#include "spi_wifi.h"
 #include "bsp/camera/himax.h"
 #include "gaplib/jpeg_encoder.h"
-
-static uint8_t spi_tx_buffer[34] __attribute__((aligned(4))); // alignment is a requirement for SPI
-static uint8_t spi_rx_cmd_buffer[6] __attribute__((aligned(4)));
-static uint8_t spi_rx_buffer[6] __attribute__((aligned(4)));
-static uint8_t spi_zeros[32] __attribute__((aligned(4)));
-static uint8_t spi_read_status[32] __attribute__((aligned(4)));
 
 // #define DEBUG
 // #define JPEG_Q_100
@@ -17,8 +12,6 @@ static unsigned char crc8Table[256];     /* 8-bit table */
 static uint8_t isRefresh = 0x00;
 static uint8_t includeImage = 0x00;
 static uint8_t numFeats = 8;
-
-static uint32_t v_lowbit = 0, v_highbit = 0;
 
 #define AT_INPUT_WIDTH    (320)
 #define AT_INPUT_HEIGHT   (240)
@@ -30,24 +23,11 @@ static uint32_t v_lowbit = 0, v_highbit = 0;
 #define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
 RT_L2_DATA uint8_t Input_1[CAMERA_WIDTH*CAMERA_HEIGHT] = {0x00};
 
+struct pi_device camera;
+
 RT_L2_DATA uint8_t jpegImageBuffer[20*1024] = {0x00};
 RT_L2_DATA uint8_t * jpegImage = jpegImageBuffer + 1;
 RT_L2_DATA int jpegImageSize = 0;
-
-#define SPI_PACKET_LENGTH (34)
-#define SPI_DATA_LENGTH (30)
-#define PACKET_LENGTH 726
-#define TCP_DATA_LENGTH (726)
-RT_L2_DATA uint8_t packet[PACKET_LENGTH];
-static uint32_t dataPos = 0;
-
-struct pi_device spi_dev = { 0 };
-struct pi_device camera;
-
-struct pi_device gpio_lowbit;
-struct pi_device gpio_highbit;
-pi_gpio_e gpio_in_lowbit = PI_GPIO_A19_PAD_33_B12;
-pi_gpio_e gpio_in_highbit = PI_GPIO_A5_PAD_17_B40;
 
 void crop(uint8_t *img) {
     int ps = 0;
@@ -67,64 +47,6 @@ void capture_img_sync() {
     pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
     crop(Input_1);
     /*equalize_histogram(Input_1);*/
-}
-
-uint8_t spiSendPacket() {
-    uint8_t status = 0x00;
-    // uint32_t start_time = rt_time_get_us();
-    // spi_read_status[0] = 0x00;
-    status = 0x00;
-
-            // pi_spi_send(&spi_dev, spi_cmd_buffer, 8 * 2, PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE);
-    pi_spi_send(&spi_dev, spi_tx_buffer, 8 * 34, PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE);
-            // printf("Packet Send.\n");
-    pi_time_wait_us(30);
-
-    do {
-        pi_gpio_pin_read(&gpio_lowbit, gpio_in_lowbit, &v_lowbit);
-        pi_gpio_pin_read(&gpio_highbit, gpio_in_highbit, &v_highbit);
-        status = v_highbit << 1 | v_lowbit;
-        // printf("HIGH: %d | LOW: %d | status: %d\n", v_highbit, v_lowbit, status);
-        status = v_highbit << 1 | v_lowbit;
-        // pi_spi_transfer(&spi_dev, spi_rx_cmd_buffer, spi_rx_buffer, 8 * 6, PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE);
-        // for (size_t j = 0; j < 6; j += 1) {
-        //     printf("%x %x\n", spi_rx_cmd_buffer[j], spi_rx_buffer[j]);
-        // }
-        // status = spi_rx_buffer[2];
-        // printf("Status: %d\n", status);
-    } while (status == 0x00);
-
-    return status;
-
-// #else
-//         pi_task_t wait_task = { 0 };
-//         pi_task_block(&wait_task);
-//         pi_spi_send_async(&spi_dev, spi_tx_buffer, 8 * sizeof(spi_tx_buffer), PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE, &wait_task);
-//         pi_task_wait_on(&wait_task);
-// #endif
-//             while (v_lowbit == 1 && v_highbit == 1) {
-//                 pi_spi_send(&spi_dev, spi_status_buffer, 8 * 1, PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE);
-// #ifdef DEBUG
-//                 for (size_t j = 0; j < 1; j += 1) {
-//                     printf("%x ", spi_status_buffer[j]);
-//                 }
-//                 printf("\n");
-// #endif
-//                 pi_spi_transfer(&spi_dev, spi_zeros, spi_read_status, 8 * 4, PI_SPI_CS_KEEP | PI_SPI_LINES_SINGLE);
-// #ifdef DEBUG
-//                 for (size_t j = 0; j < 4; j += 1) {
-//                     printf("%x ", spi_read_status[j]);
-//                 }
-//                 printf("\n");
-// #endif
-//                 pi_time_wait_us(10);
-//             }
-            // uint32_t end_time = rt_time_get_us();
-            // printf("End Time: %dus\n", end_time - start_time);
-            // printf("GPIO Low opened, in val: %d\n", v_lowbit);
-            // printf("GPIO HIGH opened, in val: %d\n", v_highbit);
-            // pi_time_wait_us(10);
-
 }
 
 static int process_image(int idx)
@@ -219,89 +141,6 @@ static int process_image(int idx)
 
 }
 
-void formTCPPacket(uint8_t * packet, uint8_t * data, int dataLength, uint8_t kind, uint8_t index) {
-    uint16_t packetLength = 0;
-    uint32_t startPos = TCP_DATA_LENGTH * index;
-    if(TCP_DATA_LENGTH * (index + 1) < dataLength) {
-        packetLength = TCP_DATA_LENGTH;
-    } else {
-        packetLength = dataLength - startPos;
-    }
-
-    memset(packet, 0, PACKET_LENGTH);
-
-    packet[0] = kind;
-    packet[1] = index;
-    packet[2] = (uint8_t)(packetLength >> 8) & 0XFF;
-    packet[3] = (uint8_t)(packetLength & 0xFF);
-
-    memcpy(packet + 4, data + startPos, packetLength);
-}
-
-void formSPIPacket(uint8_t * packet, uint8_t * data, int dataLength, uint8_t index) {
-    uint8_t packetLength = 0;
-    uint32_t startPos = SPI_DATA_LENGTH * index;
-    if(SPI_DATA_LENGTH * (index + 1) < dataLength) {
-        packetLength = SPI_DATA_LENGTH;
-    } else {
-        packetLength = dataLength - startPos;
-    }
-
-    memset(spi_tx_buffer, 0, SPI_PACKET_LENGTH);
-
-    spi_tx_buffer[0] = 0x02;
-    spi_tx_buffer[1] = 0x00;
-    spi_tx_buffer[2] = packetLength;
-    spi_tx_buffer[3] = index;
-    memcpy(packet + 4, data + startPos, packetLength);
-    // for(int j = 4; j < 34; j++) {
-    //     spi_tx_buffer[3] ^= spi_tx_buffer[j];
-    // }
-}
-
-void formPacketForImage(uint8_t * data, int dataLength) {
-
-    uint8_t indexTCP = 0;
-    uint8_t indexSPI = 0;
-    uint8_t status = 0x00;
-    uint8_t totalPacketTCP = 0;
-    uint8_t totalPacketSPI = 0;
-
-    // totalPacketTCP = AT_INPUT_SIZE / TCP_DATA_LENGTH + 1;
-    totalPacketTCP = dataLength / TCP_DATA_LENGTH + 1;
-    while(indexTCP < totalPacketTCP) {
-        formTCPPacket(packet, data, dataLength, 0, indexTCP);
-        indexTCP++;
-
-        indexSPI = 0;
-        totalPacketSPI = TCP_DATA_LENGTH / SPI_DATA_LENGTH + 1;
-        // printf("Index: %d %d\n", packet[0], packet[1]);
-        // printf("Total SPI Packets: %d\n", totalPacket);
-        // for(int i = 0; i < 50; i++) {
-        //     printf("%x ", packet[i]);
-        // }
-        // printf("\n");
-        
-        while(indexSPI < totalPacketSPI) {
-            formSPIPacket(spi_tx_buffer, packet, 730, indexSPI);
-            // printf("DataPos: %d, %d\n", spiDataPos, PACKET_LENGTH);
-            // for(int i = 0; i < 34; i++) {
-            //     printf("%x ", spi_tx_buffer[i]);
-            // }
-            // printf("\n");
-            status = spiSendPacket();
-            // printf("Index: %d %d\n\n", spi_tx_buffer[3], status);
-            if(status == 0x01) {
-                indexSPI += 1;
-            } else if(status == 0x02) {
-                indexSPI = indexSPI == 0? 0: indexSPI - 1;
-            } else if(status == 0x03) {
-
-            }
-        }
-    }
-}
-
 static int open_camera_himax(struct pi_device *device) {
     struct pi_himax_conf cam_conf;
     pi_himax_conf_init(&cam_conf);
@@ -362,55 +201,14 @@ void test_spi_master()
         pmsis_exit(-2);
     }
 
-    struct pi_spi_conf spi_conf = { 0 };
-
-    pi_spi_conf_init(&spi_conf);
-    spi_conf.max_baudrate = 10 * 1000 * 1000;
-    spi_conf.itf = 1; // on Gapuino SPI1 can be used freely
-    spi_conf.cs = 0;
-    spi_conf.wordsize = PI_SPI_WORDSIZE_8;
-    spi_conf.polarity = PI_SPI_POLARITY_0;
-    spi_conf.phase = PI_SPI_PHASE_0;
-
-    pi_open_from_conf(&spi_dev, &spi_conf);
-
-    if (pi_spi_open(&spi_dev)) {
-        printf("SPI open failed\n");
+    if(initializeSPI()) {
+        printf("Failed to open SPI\n");
         pmsis_exit(-1);
     }
-
-    struct pi_gpio_conf gpio_conf;
-    pi_gpio_conf_init(&gpio_conf);
-    pi_open_from_conf(&gpio_lowbit, &gpio_conf);
-    pi_open_from_conf(&gpio_highbit, &gpio_conf);
-    if (pi_gpio_open(&gpio_lowbit) || pi_gpio_open(&gpio_highbit)) {
-        printf("GPIO open failed\n");
-        pmsis_exit(-1);
-    }
-
-    pi_gpio_flags_e cfg_flags = PI_GPIO_INPUT; // PI_GPIO_INPUT|PI_GPIO_PULL_DISABLE|PI_GPIO_DRIVE_STRENGTH_LOW;
-    pi_gpio_pin_configure(&gpio_lowbit, gpio_in_lowbit, cfg_flags);
-    pi_gpio_pin_configure(&gpio_highbit, gpio_in_highbit, cfg_flags);
-
-    // spi_cmd_buffer[0] = 0x02;
-    // spi_cmd_buffer[1] = 0x00;
-
-    // spi_tx_buffer[0] = 0x02;
-    // spi_tx_buffer[1] = 0x00;
-
-    // spi_status_buffer[0] = 0x04;
-    // spi_status_buffer[1] = 0x00;
-    // for (int i = 0; i < 32; i++) {
-    //     spi_zeros[i] = 0;
-    //     spi_read_status[i] = 0;
-    // }
-    memset(spi_rx_cmd_buffer, 0, 4);
-    memset(spi_rx_buffer, 0, 4);
-    spi_rx_cmd_buffer[0] = 0x04;
-
+    
     initCrc8();
 
-    for(int i = 0; i < 20 ;i++) {
+    for(int i = 0; i < 100 ;i++) {
         capture_img_sync();
         // uint32_t start = rt_time_get_us();
         // printf("ENCODEING...\n");
@@ -424,7 +222,7 @@ void test_spi_master()
         // pi_time_wait_us(5000 * 1000);
         // jpegImageSize = 0;
         // memset(jpegImageBuffer, 0, sizeof(jpegImageBuffer));
-        formPacketForImage(Input_1, AT_INPUT_SIZE);
+        transmitSPI(Input_1, AT_INPUT_SIZE, 0);
     }
 
 // //#define SYNC
