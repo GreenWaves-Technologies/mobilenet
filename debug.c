@@ -290,14 +290,14 @@ int body(void){
         
         start = rt_time_get_us();
         capture_img_async();
-        printf("got img");
+        printf("got img\n");
         
         for (int i = 0; i < 5; i++) {
             spi_read_status[0] = 0x00;
             send_spi(Input_1 + (i * 32));
             pi_time_wait_us(100);
         }
-        printf("sent over spi");
+        printf("sent over spi\n");
 
         /*times[0] = rt_time_get_us() - start;*/
        
