@@ -140,7 +140,7 @@ status(2-bit):
 0x01 - OK
 0x02 - packet with higher index being transmitted
 */
-uint8_t spiSendPacket(uint32_t * spi_tx_buffer, int dataLength) {
+uint8_t spiSendPacket(uint8_t * spi_tx_buffer, int dataLength) {
     uint8_t status = 0x00;
     // uint32_t start_time = rt_time_get_us();
     // spi_read_status[0] = 0x00;

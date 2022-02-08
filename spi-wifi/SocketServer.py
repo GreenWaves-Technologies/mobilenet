@@ -2,8 +2,14 @@ import socket
 import time 
 import numpy as np
 from PIL import Image
+import random
+import os
+
+if not os.path.exists('./test'):
+    os.mkdir('./test')
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('0.0.0.0', 8585))
+s.bind(('0.0.0.0', 8584))
 s.listen(5)                 
  
 prev_time = 0
@@ -13,15 +19,25 @@ total_size = 0
 data = b''
 start = False
 count = 0
+new_packet = False
 while True:
     client, addr = s.accept()
     print("Connected:", addr)
+    client.send(random.randbytes(4))
     while True:
         content = client.recv(730)
         if len(content) == 0:
             continue
         
-        client.send(b'\x01\x02\x03\x04')
+        if int(content[1]) == 0:
+            new_packet = True
+
+        # print("Index:{}".format(int(content[1])))
+        if new_packet:
+            # client.send(b'\x01\x02\x03\x04')
+            client.send(random.randbytes(4))
+            # print("Send Commands")
+            new_packet = False
         if int(content[1]) != 0 and not start:
             continue
         elif int(content[1]) == 0:
@@ -31,8 +47,8 @@ while True:
         packetData = content[4:]
         real_length = int(content[2]) << 8 | int(content[3])
         total_size += real_length
-        # print("Index:{}".format(int(content[1])))
-        # print("Packet Length:{}/{}".format(real_length, total_size))
+        print("Index:{}".format(int(content[1])))
+        # print("Packet Length:{}/{} - {}".format(real_length, total_size, len(packetData[:real_length])))
         data = data + packetData[:real_length]
         
         if total_size == 240 * 320:

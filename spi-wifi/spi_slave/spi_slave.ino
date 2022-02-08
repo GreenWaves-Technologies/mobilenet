@@ -51,41 +51,6 @@ static uint8_t commands[4];
 
 WiFiClient tcpClient;
 
-static void initCrc8() {
-    int i,j;
-    unsigned char crc;
-
-    for (i=0; i<256; i++) {
-        crc = i;
-        for (j=0; j<8; j++) {
-            crc = (crc << 1) ^ ((crc & 0x80) ? DI : 0);
-        }
-        crc8Table[i] = crc & 0xFF;
-#if DEBUG
-        Serial.printf("table[%d] = %d (0x%X)\n", i, crc, crc);
-#endif
-    }
-}
-
-/*
-* For a byte array whose accumulated crc value is calculated 
-* byteArray is the input data, start/end are the indexes to be calculated
-*/
-uint8_t crc8(uint8_t * byteArray, int start, int end) {   
-    uint8_t crc = 0x00;
-    for(int i = start; i < end; i++) {
-        crc = crc8Table[crc ^ byteArray[i]];
-#if DEBUG
-        Serial.printf("%x:%x ", byteArray[i], crc);
-#endif
-    }
-#if DEBUG
-    Serial.println("");
-#endif
-    return crc;
-}
-
-
 void setup() {
     Serial.begin(115200);
     Serial.println("Start");
