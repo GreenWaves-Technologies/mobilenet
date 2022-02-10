@@ -1,5 +1,6 @@
 
 #include "pmsis.h"
+#include "spi_wifi.c"
 #include "spi_wifi.h"
 #include "bsp/camera/himax.h"
 #include "gaplib/jpeg_encoder.h"
