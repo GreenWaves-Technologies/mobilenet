@@ -189,7 +189,7 @@ int body(void){
         printf("forward pass done");
         /*times[2] = rt_time_get_us() - start;*/
         
-        /*transmitSPI(Input_1, AT_INPUT_SIZE, 0);*/
+        transmitSPI(Input_1, AT_INPUT_SIZE, 0);
         transmitSPI(ResOut, 8*SPATIAL_DIM, 0);
         /*start = rt_time_get_us();*/
         /*for (int i=0; i < 8; i++) {*/
