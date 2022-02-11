@@ -25,10 +25,15 @@
 //static unsigned char crc8Table[256];
 
 const uint16_t port = 8584;
-const char *host = "192.168.0.215";
+const char *host = "192.168.0.245";
+//const char *host = "192.168.0.145";
 
-const char *ssid = "APT27";
-const char *pass = "ABCabc123##";
+
+//const char *ssid = "TP-Link_0234";
+//const char *pass = "56807325";
+
+const char *ssid = "TP-Link_D0D4";
+const char *pass = "QxamQJdv8j";
 
 volatile bool interrupted = false;
 
@@ -38,12 +43,14 @@ static uint32_t highbit = 4;
 static uint8_t indexes = 0;
 
 #define BUFFERSIZE (4000)
+//#define BUFFERSIZE (1500)
 static uint8_t tcpBuffer[BUFFERSIZE];
 static uint8_t packetBuffer[32];
 volatile int bufferLength = 0;
 volatile int packetLength = 0;
 
 #define PACKET_TO_TRANSMIT 125
+//#define PACKET_TO_TRANSMIT 50
 volatile uint8_t totalPacketToTransmit = 0;
 
 //Command received from servers/clouds
@@ -80,15 +87,12 @@ void setup() {
     }
     Serial.println("Connected to server successful!");
 
-    // Does not use NoDelay or Sync, which degrades performance
-//    tcpClient.setNoDelay(1);
-//    tcpClient.setSync(1);
-
-  // data has been received from the master. Beware that len is always 32
-  // and the buffer is autofilled with zeroes if data is less than 32 bytes long
-  // It's up to the user to implement protocol for handling data length
     SPISlave.onData([](uint8_t * data, size_t len) {
-//        SPISlave.setStatus(0xFFFFFFFF);
+        //for (int i = 0; i < len; i++) {
+        //  Serial.print(data[i]);
+        //  Serial.print(" ");
+        //}
+        //Serial.println("");
         digitalWrite(highbit, LOW);
         digitalWrite(lowbit, LOW);
         memcpy((uint8_t *)packetBuffer, data, 32);
@@ -106,27 +110,22 @@ static unsigned long cur_time = 0;
 
 void loop() {
     if(interrupted) {
-
-//        unsigned long startTime = micros();
         if(indexes == 25) {
             indexes = 0;
         }
-//      
+
         if(packetBuffer[1] < indexes) {
-//            Serial.printf("Hit Duplicate Packet %d, %d\n", packetBuffer[1], indexes);
             digitalWrite(highbit, LOW);
             digitalWrite(lowbit, HIGH);
             interrupted = false;
             return;
         } else if(packetBuffer[1] > indexes) {
-//            Serial.printf("Hit Larget Packet %d, %d\n", packetBuffer[1], indexes);
             digitalWrite(highbit, HIGH);
             digitalWrite(lowbit, LOW);
             interrupted = false;
             return;
         }
 
-//        Serial.printf("Buffer Processed.\n");
         packetLength = (uint32_t)packetBuffer[0];
 
         memcpy(tcpBuffer + bufferLength, packetBuffer + 2, packetLength);
@@ -134,37 +133,22 @@ void loop() {
         totalPacketToTransmit += 1;
 
         if(totalPacketToTransmit == PACKET_TO_TRANSMIT) {
-    //        if(prev_time == 0) {
-    //            prev_time = millis();
-    //        } else {
-    //            cur_time = millis();
-    //            Serial.printf("SPI bandwidth: %.3f, %d, %d\n", (bufferLength / ((cur_time - prev_time) / 1000.0)), cur_time, prev_time);
-    //            prev_time = cur_time;
-    //        }
             if(tcpClient.connected()) {
-    //            Serial.printf("Data Avail:%d\n", tcpClient.availableForWrite());
                 while(tcpClient.availableForWrite() < bufferLength) {
                     delay(0);
                 }
-              
                 tcpClient.write(tcpBuffer, bufferLength);
-    //          Serial.println("TCP Transmission Finished");  
             }
-    //
             if(tcpClient.connected() && tcpClient.available()) {
                 for(int i = 0; i < 4; i++) {
                     commands[i] = tcpClient.read();
                 }
-//                Serial.printf("Commands: %x, %x, %x, %x\n", commands[0], commands[1], commands[2], commands[3]);
                 uint32_t commandStatus = commands[0] | (commands[1] << 8) | (commands[2] << 16) | (commands[3] << 24);
                 SPISlave.setStatus(commandStatus);
-//                Serial.printf("Set New Status: %d\n", commandStatus);
             }
             
             bufferLength = 0;
             totalPacketToTransmit = 0;
-//            unsigned long endTime = micros();
-//            Serial.println(endTime - startTime);
         }
 
         indexes += 1;

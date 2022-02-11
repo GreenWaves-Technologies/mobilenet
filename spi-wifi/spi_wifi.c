@@ -20,6 +20,7 @@ pi_gpio_e gpio_in_lowbit = PI_GPIO_A19_PAD_33_B12;
 pi_gpio_e gpio_in_highbit = PI_GPIO_A5_PAD_17_B40;
 uint32_t v_lowbit = 0, v_highbit = 0;
 
+unsigned char crc8Table[256];     /* 8-bit table */
 /*
 Initialize SPI and GPIOs
 */
@@ -197,3 +198,25 @@ void transmitSPI(uint8_t * data, int dataLength, int kind) {
 
     spiGetStatus();
 }
+
+void initCrc8() {
+    int i,j;
+    unsigned char crc;
+
+    for (i=0; i<256; i++) {
+        crc = i;
+        for (j=0; j<8; j++) {
+            crc = (crc << 1) ^ ((crc & 0x80) ? DI : 0);
+        }
+        crc8Table[i] = crc & 0xFF;
+    }
+}
+
+uint8_t crc8(uint8_t * byteArray, int start, int end) {   
+    uint8_t crc = 0x00;
+    for(int i = start; i < end; i++) {
+        crc = crc8Table[crc ^ byteArray[i]];
+    }
+    return crc;
+}
+
