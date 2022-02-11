@@ -3,9 +3,9 @@ if [ ! -f "$PWD/models/tflite_models/suffix.trt" ]; then
 fi
 
 
-sudo docker run -it --rm \
+sudo docker run -it\
     --network host \
     --privileged \
     -v $PWD:/root/gap_runner \
     nvcr.io/nvidia/l4t-ml:r32.5.0-py3 \
-    python3 -u /root/gap_runner/nano_server.py
+    python3 -u /root/gap_runner/spi-wifi/SocketServer.py
