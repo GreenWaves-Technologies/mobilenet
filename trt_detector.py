@@ -108,11 +108,11 @@ class TRTDetector(object):
         dets = dets.astype(np.uint16)
         # if len(dets) > self.num_dets:
 
-        idx = np.argsort(-dets[:, -2]) #sort by score
-        dets = dets[idx]
-        dets = dets[0:self.num_dets]
-        zeros = np.zeros((self.num_dets - len(dets), 6), dtype=dets.dtype)
-        dets = np.concatenate((dets, zeros), axis=0)
+        # idx = np.argsort(-dets[:, -2]) #sort by score
+        # dets = dets[idx]
+        # dets = dets[0:self.num_dets]
+        # zeros = np.zeros((self.num_dets - len(dets), 6), dtype=dets.dtype)
+        # dets = np.concatenate((dets, zeros), axis=0)
         
         # if self.cuda_ctx:
             # self.cuda_ctx.pop()
