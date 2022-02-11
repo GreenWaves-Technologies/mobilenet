@@ -83,7 +83,7 @@ USE_PMSIS_BSP=1
 PMSIS_OS=pulpos
 
 APP = imagenet
-MAIN ?= debug.c
+MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB) cam/cam.c spi-wifi/spi_wifi.c
 
 APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns
