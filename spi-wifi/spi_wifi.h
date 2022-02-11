@@ -14,6 +14,8 @@ extern uint8_t spi_rx_buffer[5] __attribute__((aligned(4)));
 #define TCP_PACKET_LENGTH (730)
 #define TCP_DATA_LENGTH (726)
 
+#define DI 0x07
+
 extern RT_L2_DATA uint8_t packet[TCP_PACKET_LENGTH];
 extern uint32_t dataPos;
 
@@ -25,7 +27,10 @@ extern struct pi_device gpio_highbit;
 extern pi_gpio_e gpio_in_highbit, gpio_in_lowbit;
 extern uint32_t v_lowbit, v_highbit;
 
+extern unsigned char crc8Table[256];     /* 8-bit table */
+
 extern int initializeSPI();
 extern void transmitSPI(uint8_t * data, int dataLength, int kind);
-
+extern void initCrc8();
+extern uint8_t crc8(uint8_t * byteArray, int start, int end);
 #endif
