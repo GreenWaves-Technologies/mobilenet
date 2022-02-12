@@ -15,6 +15,12 @@
         var refreshInterval;
         var ws;
         
+        var host = location.host;
+        const parts = host.split(":")
+        var ip = parts[0]
+        
+        console.log(ip);
+        
         window.onload = function() {
             setup();
             startStream();
@@ -52,7 +58,7 @@
         function startStream(){
             if(stream==false){
                 //refreshInterval = setInterval(refreshImages, 250);
-                ws = new WebSocket("ws://127.0.0.1:8111/");
+                ws = new WebSocket("ws://"+ip+":8111/");
                 ws.onmessage = function (event) {console.log(event.data); refreshImages();}
                 //ws.onopen = function (event) {ws.send("ready");}
                 console.log(ws)
