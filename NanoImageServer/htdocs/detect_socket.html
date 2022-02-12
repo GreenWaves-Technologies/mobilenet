@@ -35,9 +35,9 @@
             }
         }
         
-        function refreshImages(){    
+        function refreshImages(count){    
             // create a new timestamp 
-            console.log("Refreshing images. Count="+frame_count);
+            console.log("Refreshing images. Count="+count);
             var timestamp = new Date().getTime();  
             var queryString = "?t=" + timestamp; 
             
@@ -49,9 +49,9 @@
                 
             }
             
-            frame_count++;      
+            //frame_count++;      
             
-            document.getElementById("last_frame_time").innerHTML="Last Frame: " + frame_count;
+            document.getElementById("last_frame_time").innerHTML="Last Frame: " + count;
                     
         } 
         
@@ -59,7 +59,7 @@
             if(stream==false){
                 //refreshInterval = setInterval(refreshImages, 250);
                 ws = new WebSocket("ws://"+ip+":8111/");
-                ws.onmessage = function (event) {console.log(event.data); refreshImages();}
+                ws.onmessage = function (event) {console.log(event.data); refreshImages(event.data);}
                 //ws.onopen = function (event) {ws.send("ready");}
                 console.log(ws)
                 stream=true;
