@@ -6,12 +6,12 @@ import cv2
 import random
 import os
 from trt_detector import TRTDetector
-from utils.network import buff2numpy
+from network import buff2numpy
 # import asyncio
 # import websockets
-import queue
-from threading import Thread
-from utils.inference import draw_dets
+# import queue
+# from threading import Thread
+from inference import draw_dets
 
 class NanoServer:
     def __init__(self, detector,

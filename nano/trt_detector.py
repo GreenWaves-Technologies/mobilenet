@@ -1,10 +1,10 @@
 import ctypes
 import numpy as np
-import cv2
+# import cv2
 import tensorrt as trt
 import pycuda.autoinit  # This is needed for initializing CUDA driver
 import pycuda.driver as cuda
-from utils.inference import HostDeviceMem, get_input_shape, allocate_buffers, do_inference, nms_boxes
+from inference import HostDeviceMem, get_input_shape, allocate_buffers, do_inference, nms_boxes
 import time
 
 class TRTDetector(object):
