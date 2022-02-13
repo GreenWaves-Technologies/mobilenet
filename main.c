@@ -163,7 +163,8 @@ int body(void){
 
     printf("entered main loop\n");
     /*while (1) {*/
-    for(int i = 0; i < 100 ;i++) {
+    /*for(int i = 0; i < 100 ;i++) {*/
+    while (1) {
         /*uart_read();*/
         /*start = rt_time_get_us();*/
         captureImgAsync(Input_1);
