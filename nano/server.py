@@ -7,8 +7,8 @@ import random
 import os
 from trt_detector import TRTDetector
 from utils.network import buff2numpy
-import asyncio
-import websockets
+# import asyncio
+# import websockets
 import queue
 from threading import Thread
 from utils.inference import draw_dets
@@ -104,14 +104,14 @@ class NanoServer:
                 total_size = 0
                 print(count, time.time() - start_time)
 
-def start_websocket_loop(loop, server):
-    loop.run_until_complete(server)
-    loop.run_forever()
+# def start_websocket_loop(loop, server):
+    # loop.run_until_complete(server)
+    # loop.run_forever()
 
-async def image_notify(websocket, path, queue):
-    while True:
-        count = queue.get()
-        await websocket.send("count %d" % count)
+# async def image_notify(websocket, path, queue):
+    # while True:
+        # count = queue.get()
+        # await websocket.send("count %d" % count)
                
 if __name__ == '__main__':
     detector = TRTDetector('/root/gap_runner/nano/suffix.trt')

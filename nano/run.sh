@@ -16,4 +16,4 @@ sudo docker run -it\
     --privileged \
     -v $PWD:/root/gap_runner \
     nano_server:latest \
-    python3 -u /root/gap_runner/nano/nano_det_server.py
+    python3 -u /root/gap_runner/nano/server.py
