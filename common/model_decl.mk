@@ -4,24 +4,24 @@
 # This software may be modified and distributed under the terms
 # of the BSD license.  See the LICENSE file for details.
 
-MODEL_SUFFIX?=
+#MODEL_SUFFIX?=
 
-MODEL_PREFIX?=GapFlow
+#MODEL_PREFIX?=GapFlow
 
-MODEL_PYTHON=python3
+#MODEL_PYTHON=python3
 
 # Increase this to improve accuracy
-TRAINING_EPOCHS?=1
+#TRAINING_EPOCHS?=1
 MODEL_COMMON ?= common
-MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include
-MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
-MODEL_COMMON_SRC_FILES ?= ImgIO.c
-MODEL_COMMON_SRCS = $(realpath $(addprefix $(MODEL_COMMON_SRC)/,$(MODEL_COMMON_SRC_FILES)))
+#MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include
+#MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
+#MODEL_COMMON_SRC_FILES ?= ImgIO.c
+#MODEL_COMMON_SRCS = $(realpath $(addprefix $(MODEL_COMMON_SRC)/,$(MODEL_COMMON_SRC_FILES)))
 MODEL_HEADERS = $(MODEL_COMMON)/headers
-MODEL_TRAIN = model/train.py
+#MODEL_TRAIN = model/train.py
 MODEL_BUILD = BUILD_MODEL$(MODEL_SUFFIX)
-MODEL_TRAIN_BUILD = BUILD_TRAIN$(TRAIN_SUFFIX)
-MODEL_H5 = $(MODEL_TRAIN_BUILD)/$(MODEL_PREFIX).h5
+#MODEL_TRAIN_BUILD = BUILD_TRAIN$(TRAIN_SUFFIX)
+#MODEL_H5 = $(MODEL_TRAIN_BUILD)/$(MODEL_PREFIX).h5
 
 #MODEL_TFLITE = $(MODEL_BUILD)/$(MODEL_PREFIX).tflite
 MODEL_TFLITE = $(MODEL_BUILD)/$(MODEL_PREFIX).$(MODEL_FILETYPE)

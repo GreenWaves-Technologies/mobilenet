@@ -23,21 +23,7 @@ AT_L3_ADDR = $(MODEL_PREFIX)_L3_Flash
 
 QUANT_FLAG ?= -q
 
-ifeq ($(AT_INPUT_WIDTH), 224)
-	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_224.ppm
-endif
-ifeq ($(AT_INPUT_WIDTH), 192)
-	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_192.ppm
-endif
-ifeq ($(AT_INPUT_WIDTH), 160)
-	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_160.ppm
-endif
-ifeq ($(AT_INPUT_WIDTH), 128)
-	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_128.ppm
-endif
-ifeq ($(AT_INPUT_WIDTH), 96)
-	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
-endif
+IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_$(AT_INPUT_WIDTH).ppm
 
 io=host
 
