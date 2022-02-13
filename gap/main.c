@@ -188,7 +188,7 @@ int body(void){
 
         /*start = rt_time_get_us();*/
         pi_cluster_send_task_to_cl(&cluster_dev, task);
-        printf("forward pass done");
+        printf("forward pass done\n");
         /*times[2] = rt_time_get_us() - start;*/
         
         transmitSPI(Input_1, AT_INPUT_SIZE, 0);
