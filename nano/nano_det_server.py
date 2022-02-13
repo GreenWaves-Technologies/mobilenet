@@ -86,13 +86,13 @@ class NanoServer:
                 
                 # vid.write(img) 
                 # frame_num = str(count).zfill(5)
-                cv2.imwrite('/root/gap_runner/htdocs/imgs/frame.png', img)
+                cv2.imwrite('/root/gap_runner/web/htdocs/imgs/frame.png', img)
                 for i in range(8):
                     h = channels[0, i] # H W
                     h = h / h.max() #note that h \in [0, 6] from ReLU6
                     h = h * 255
                     h = h.astype(np.uint8)
-                    fname = '/root/gap_runner/htdocs/imgs/h%d.png' % (i + 1)
+                    fname = '/root/gap_runner/web/htdocs/imgs/h%d.png' % (i + 1)
                     cv2.imwrite(fname, h)
 
                 # if Q.qsize() == 0: 
