@@ -1,0 +1,9 @@
+set debug true
+adjust
+fusions --scale8
+set input_norm_func 'x: (x-114)/57'
+aquant -f 8 --allow_asymmetric images/calibration/*
+imageformat input_1 bw8 offset_int8
+qshow
+show
+save_state

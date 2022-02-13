@@ -14,8 +14,7 @@ MODEL_PREFIX?=prefix
 AT_INPUT_WIDTH?=224
 AT_INPUT_HEIGHT?=224
 AT_INPUT_COLORS?=1
-NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_prefix
-MODEL_FILETYPE=onnx
+NNTOOL_SCRIPT=prefix.nntool
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
 AT_CNN = $(MODEL_PREFIX)CNN
@@ -33,17 +32,13 @@ $(info Building GAP8 mode with $(QUANT_BITS) bit quantization)
 
 MODEL_SQ8=1 # use scale based quantization (tflite-like)
 
-MODEL_FILETYPE?=tflite
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
-TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).$(MODEL_FILETYPE)
+TRAINED_ONNX_MODEL=models/$(MODEL_PREFIX).onnx
 
-#include common/model_decl.mk
-
-#MODEL_COMMON ?= common
 MODEL_HEADERS = headers
 MODEL_BUILD = BUILD_MODEL$(MODEL_SUFFIX)
-MODEL_TFLITE = $(MODEL_BUILD)/$(MODEL_PREFIX).$(MODEL_FILETYPE)
+MODEL_ONNX = $(MODEL_BUILD)/$(MODEL_PREFIX).onnx
 TENSORS_DIR = $(MODEL_BUILD)/tensors
 MODEL_TENSORS = $(MODEL_BUILD)/$(MODEL_PREFIX)_L3_Flash_Const.dat
 MODEL_STATE = $(MODEL_BUILD)/$(MODEL_PREFIX).json
@@ -141,10 +136,6 @@ clean:: clean_model
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)
 
-TFLITE_PYSCRIPT= models/tflite_inference.py
-test_tflite:
-	python $(TFLITE_PYSCRIPT) -t $(TRAINED_TFLITE_MODEL) -i $(IMAGE)
-
 #include common/model_rules.mk
 
 USE_DISP=1
@@ -171,17 +162,17 @@ endif
 $(MODEL_BUILD):
 	mkdir $(MODEL_BUILD)
 
-$(MODEL_TFLITE): $(TRAINED_TFLITE_MODEL) | $(MODEL_BUILD)
+$(MODEL_ONNX): $(TRAINED_ONNX_MODEL) | $(MODEL_BUILD)
 	cp $< $@
 
-$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) | $(MODEL_BUILD)
+$(MODEL_STATE): $(MODEL_ONNX) $(IMAGES) | $(MODEL_BUILD)
 	echo "GENERATING NNTOOL STATE FILE"
 	$(NNTOOL) -s $(NNTOOL_SCRIPT) $< $(QUANT_FLAG)
 
 nntool_state: $(MODEL_STATE)
 
 # Runs NNTOOL with its state file to generate the autotiler model code
-$(MODEL_BUILD)/$(MODEL_SRC): $(MODEL_STATE) $(MODEL_TFLITE) | $(MODEL_BUILD)
+$(MODEL_BUILD)/$(MODEL_SRC): $(MODEL_STATE) $(MODEL_ONNX) | $(MODEL_BUILD)
 	echo "GENERATING AUTOTILER MODEL"
 	$(NNTOOL) -g -M $(MODEL_BUILD) -m $(MODEL_SRC) -T $(TENSORS_DIR) $(MODEL_GENFLAGS_EXTRA) $<
 
@@ -216,8 +207,6 @@ test_images: $(IMAGES)
 
 .PHONY: model clean_model clean_train test_images clean_images train nntool_gen nntool_state tflite compile_model
 
-
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
 include $(RULES_DIR)/pmsis_rules.mk
-
