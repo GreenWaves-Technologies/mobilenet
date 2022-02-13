@@ -25,7 +25,8 @@
 /*#include "spi-wifi/spi_wifi.c"*/
 #include "spi-wifi/spi_wifi.h"
 #include "cam/cam.h"
-#include "main.h"
+/*#include "main.h"*/
+#include "Gap.h"
 
 /*#define BAUD 3000000*/
 /*#define __XSTR(__s) __STR(__s)*/

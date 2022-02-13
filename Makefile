@@ -38,7 +38,27 @@ NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
 TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).$(MODEL_FILETYPE)
 
-include common/model_decl.mk
+#include common/model_decl.mk
+
+#MODEL_COMMON ?= common
+MODEL_HEADERS = headers
+MODEL_BUILD = BUILD_MODEL$(MODEL_SUFFIX)
+MODEL_TFLITE = $(MODEL_BUILD)/$(MODEL_PREFIX).$(MODEL_FILETYPE)
+TENSORS_DIR = $(MODEL_BUILD)/tensors
+MODEL_TENSORS = $(MODEL_BUILD)/$(MODEL_PREFIX)_L3_Flash_Const.dat
+MODEL_STATE = $(MODEL_BUILD)/$(MODEL_PREFIX).json
+MODEL_SRC = $(MODEL_PREFIX)Model.c
+MODEL_GEN = $(MODEL_BUILD)/$(MODEL_PREFIX)Kernels 
+MODEL_GEN_C = $(addsuffix .c, $(MODEL_GEN))
+MODEL_GEN_CLEAN = $(MODEL_GEN_C) $(addsuffix .h, $(MODEL_GEN))
+MODEL_GEN_EXE = $(MODEL_BUILD)/GenTile
+MODEL_GENFLAGS_EXTRA =
+EXTRA_GENERATOR_SRC =
+IMAGES = images
+RM=rm -f
+NNTOOL=nntool
+include $(RULES_DIR)/at_common_decl.mk
+$(info GEN ... $(CNN_GEN))
 
 # Here we set the default memory allocation for the generated kernels
 # REMEMBER THAT THE L1 MEMORY ALLOCATION MUST INCLUDE SPACE
@@ -125,7 +145,78 @@ TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
 	python $(TFLITE_PYSCRIPT) -t $(TRAINED_TFLITE_MODEL) -i $(IMAGE)
 
-include common/model_rules.mk
+#include common/model_rules.mk
+
+USE_DISP=1
+
+ifdef USE_DISP
+  SDL_FLAGS= -lSDL2 -lSDL2_ttf -DAT_DISPLAY
+else
+  SDL_FLAGS=
+endif
+
+ifdef MODEL_L1_MEMORY
+  MODEL_GEN_EXTRA_FLAGS += --L1 $(MODEL_L1_MEMORY)
+endif
+
+ifdef MODEL_L2_MEMORY
+  MODEL_GEN_EXTRA_FLAGS += --L2 $(MODEL_L2_MEMORY)
+endif
+
+ifdef MODEL_L3_MEMORY
+  MODEL_GEN_EXTRA_FLAGS += --L3 $(MODEL_L3_MEMORY)
+endif
+
+
+$(MODEL_BUILD):
+	mkdir $(MODEL_BUILD)
+
+$(MODEL_TFLITE): $(TRAINED_TFLITE_MODEL) | $(MODEL_BUILD)
+	cp $< $@
+
+$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) | $(MODEL_BUILD)
+	echo "GENERATING NNTOOL STATE FILE"
+	$(NNTOOL) -s $(NNTOOL_SCRIPT) $< $(QUANT_FLAG)
+
+nntool_state: $(MODEL_STATE)
+
+# Runs NNTOOL with its state file to generate the autotiler model code
+$(MODEL_BUILD)/$(MODEL_SRC): $(MODEL_STATE) $(MODEL_TFLITE) | $(MODEL_BUILD)
+	echo "GENERATING AUTOTILER MODEL"
+	$(NNTOOL) -g -M $(MODEL_BUILD) -m $(MODEL_SRC) -T $(TENSORS_DIR) $(MODEL_GENFLAGS_EXTRA) $<
+
+nntool_gen: $(MODEL_BUILD)/$(MODEL_SRC)
+
+# Build the code generator from the model code
+$(MODEL_GEN_EXE): $(CNN_GEN) $(MODEL_BUILD)/$(MODEL_SRC) $(EXTRA_GENERATOR_SRC) | $(MODEL_BUILD)
+	echo "COMPILING AUTOTILER MODEL"
+	gcc -g -o $(MODEL_GEN_EXE) -I. -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_GEN_INCLUDE) $(CNN_LIB_INCLUDE) $^ $(TILER_LIB) $(SDL_FLAGS)
+
+compile_model: $(MODEL_GEN_EXE)
+
+# Run the code generator to generate GAP graph and kernel code
+$(MODEL_GEN_C): $(MODEL_GEN_EXE)
+	echo "RUNNING AUTOTILER MODEL"
+	$(MODEL_GEN_EXE) -o $(MODEL_BUILD) -c $(MODEL_BUILD) $(MODEL_GEN_EXTRA_FLAGS)
+
+# A phony target to simplify including this in the main Makefile
+model: $(MODEL_GEN_C)
+
+clean_model:
+	$(RM) $(MODEL_GEN_EXE)
+	$(RM) -rf $(MODEL_BUILD)
+
+clean_train:
+	$(RM) -rf $(MODEL_TRAIN_BUILD)
+
+clean_images:
+	$(RM) -rf $(IMAGES)
+
+test_images: $(IMAGES)
+
+.PHONY: model clean_model clean_train test_images clean_images train nntool_gen nntool_state tflite compile_model
+
+
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
 include $(RULES_DIR)/pmsis_rules.mk
