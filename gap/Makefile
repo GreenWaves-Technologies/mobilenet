@@ -34,7 +34,7 @@ MODEL_SQ8=1 # use scale based quantization (tflite-like)
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
-TRAINED_ONNX_MODEL=models/$(MODEL_PREFIX).onnx
+TRAINED_ONNX_MODEL=$(MODEL_PREFIX).onnx
 
 MODEL_HEADERS = headers
 MODEL_BUILD = BUILD_MODEL$(MODEL_SUFFIX)
