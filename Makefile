@@ -9,6 +9,7 @@ ifndef GAP_SDK_HOME
 endif
 
 #include common.mk
+MODEL_ID?=0
 MODEL_PREFIX?=prefix
 AT_INPUT_WIDTH?=224
 AT_INPUT_HEIGHT?=224
@@ -19,8 +20,6 @@ AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
 AT_CNN = $(MODEL_PREFIX)CNN
 AT_L3_ADDR = $(MODEL_PREFIX)_L3_Flash
-
-
 
 QUANT_FLAG ?= -q
 
@@ -117,34 +116,11 @@ ifeq ($(HAVE_LCD), 1)
 	APP_CFLAGS += -DHAVE_LCD
 endif
 
-ifeq '$(MODEL_L3_EXEC)' 'qspiram'
-	MODEL_L3_RAM=AT_MEM_L3_QSPIRAM
-	APP_CFLAGS += -DUSE_QSPI
-else ifeq '$(MODEL_L3_EXEC)' 'hram'
-	MODEL_L3_RAM=AT_MEM_L3_HRAM
-else
-	$(error MODEL_L3_EXEC can only be qspiram or hram)
-endif
+MODEL_L3_RAM=AT_MEM_L3_HRAM
 
-ifeq '$(MODEL_L3_CONST)' 'qpsiflash'
-	MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
-else ifeq '$(MODEL_L3_CONST)' 'hflash'
-	MODEL_L3_FLASH=AT_MEM_L3_HFLASH
-else
-	$(error MODEL_L3_CONST can only be qpsiflash or hflash)
-endif
+MODEL_L3_FLASH=AT_MEM_L3_HFLASH
 
-ifeq '$(MODEL_INPUT)' 'ram'
-	ifeq '$(MODEL_L3_EXEC)' 'qspiram'
-		MODEL_INPUT=AT_MEM_L3_QSPIRAM
-	else
-		MODEL_INPUT=AT_MEM_L3_HRAM
-	endif
-else ifeq '$(MODEL_INPUT)' 'l2'
-	MODEL_INPUT=AT_MEM_L2
-else
-	$(error MODEL_INPUT can only be ram or l2)
-endif
+MODEL_INPUT=AT_MEM_L3_HRAM
 
 # this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
