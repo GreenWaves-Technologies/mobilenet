@@ -5,6 +5,47 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import numpy as np
 
+CLASSES = (
+    'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+    'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+    'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+    'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 
+    'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 
+    'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+    'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+    'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+    'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+    'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
+    'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+    'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',
+    'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+)
+
+def draw_dets(img, dets):
+    for det in dets:
+        box = det[0:4]
+        score = det[4]
+        if score < 10:
+            continue
+        label = CLASSES[det[5]]
+        img = cv2.rectangle(img,
+            (box[0], box[1]),
+            (box[2], box[3]),
+            (255,255,0),
+            thickness=1
+        )
+        img = cv2.putText(img,
+            '%s: %s' % (label, score),
+            (box[0], box[1] - 4),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255,255,0),
+            1
+        )
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    return img
+
 def softmax(probs, axis=-1):
     probs = np.exp(probs)
     sums = np.sum(probs, axis=axis, keepdims=True)
