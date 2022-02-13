@@ -10,3 +10,4 @@ accuracy_on_validation_data/*_emul
 !mobilenet_v1_1_0_224_quant.tflite
 *.DS_Store
 *__pycache__
+htdocs/imgs/*.png
