@@ -8,7 +8,20 @@ ifndef GAP_SDK_HOME
   $(error Source sourceme in gap_sdk first)
 endif
 
-include common.mk
+#include common.mk
+MODEL_PREFIX?=prefix
+AT_INPUT_WIDTH?=224
+AT_INPUT_HEIGHT?=224
+AT_INPUT_COLORS?=1
+NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_prefix
+MODEL_FILETYPE=onnx
+AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
+AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
+AT_CNN = $(MODEL_PREFIX)CNN
+AT_L3_ADDR = $(MODEL_PREFIX)_L3_Flash
+
+
+
 QUANT_FLAG ?= -q
 
 ifeq ($(AT_INPUT_WIDTH), 224)
