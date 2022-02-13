@@ -3,6 +3,6 @@ sudo docker run -it --rm \
     --privileged \
     -v $PWD:/root/gap_runner \
     gap_sdk \
-    bash /root/gap_runner/bin/run_gap_wifi.sh
+    bash /root/gap_runner/gap/make_run.sh
     #python -u /root/gap_runner/gap_server.py
     
