@@ -114,7 +114,7 @@ async def image_notify(websocket, path, queue):
         await websocket.send("count %d" % count)
                
 if __name__ == '__main__':
-    detector = TRTDetector('/root/gap_runner/models/tflite_models/suffix.trt')
+    detector = TRTDetector('/root/gap_runner/nano/suffix.trt')
     server = NanoServer(detector)
 
     # websocket_loop = asyncio.new_event_loop()
