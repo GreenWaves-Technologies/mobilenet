@@ -1,4 +1,4 @@
-sudo service docker restart
+rm -f ./web/htdocs/imgs/*
 
 echo "Starting Apache web server in docker on port 8080"
 sudo docker run --rm \
