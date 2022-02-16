@@ -30,7 +30,7 @@ ifeq ($(AT_INPUT_WIDTH), 96)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
 endif
 
-io=stdout
+io=host
 
 QUANT_BITS=8
 BUILD_DIR=BUILD
@@ -79,8 +79,8 @@ CLUSTER_STACK_SIZE?=6144
 CLUSTER_SLAVE_STACK_SIZE?=1024
 ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
 	TOTAL_STACK_SIZE = $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* 8)
-	FREQ_CL?=370
-	FREQ_FC?=370
+	FREQ_CL?=50
+	FREQ_FC?=50
 	MODEL_L1_MEMORY=$(shell expr 128000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY=1350000
 	MODEL_L3_MEMORY=8000000
@@ -127,42 +127,36 @@ APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DPERF -DMODEL_ID=$(MODEL_ID) -DFREQ_FC=$(FREQ
 APP_CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR)
 
 HAVE_CAMERA?=0
-HAVE_LCD?=0
+NO_IMAGE_FROM_HOST?=0
 ifeq ($(HAVE_CAMERA), 1)
 	APP_CFLAGS += -DHAVE_CAMERA
 endif
-ifeq ($(HAVE_LCD), 1)
-	APP_CFLAGS += -DHAVE_LCD
+ifeq ($(NO_IMAGE_FROM_HOST), 1)
+	APP_CFLAGS += -DNO_IMAGE_FROM_HOST
 endif
 
 ifeq '$(MODEL_L3_EXEC)' 'qspiram'
 	MODEL_L3_RAM=AT_MEM_L3_QSPIRAM
-	APP_CFLAGS += -DUSE_QSPI
+else ifeq '$(MODEL_L3_EXEC)' 'ospiram'
+	MODEL_L3_RAM=AT_MEM_L3_OSPIRAM
 else ifeq '$(MODEL_L3_EXEC)' 'hram'
 	MODEL_L3_RAM=AT_MEM_L3_HRAM
 else
 	$(error MODEL_L3_EXEC can only be qspiram or hram)
 endif
 
-ifeq '$(MODEL_L3_CONST)' 'qpsiflash'
+ifeq '$(MODEL_L3_CONST)' 'qspiflash'
 	MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
 else ifeq '$(MODEL_L3_CONST)' 'hflash'
 	MODEL_L3_FLASH=AT_MEM_L3_HFLASH
+else ifeq '$(MODEL_L3_CONST)' 'ospiflash'
+	MODEL_L3_FLASH=AT_MEM_L3_OSPIFLASH
+else ifeq '$(MODEL_L3_CONST)' 'emram'
+	MODEL_L3_FLASH=AT_MEM_L3_MRAMFLASH
 else
-	$(error MODEL_L3_CONST can only be qpsiflash or hflash)
+	$(error MODEL_L3_CONST can only be qspiflash or hflash)
 endif
 
-ifeq '$(MODEL_INPUT)' 'ram'
-	ifeq '$(MODEL_L3_EXEC)' 'qspiram'
-		MODEL_INPUT=AT_MEM_L3_QSPIRAM
-	else
-		MODEL_INPUT=AT_MEM_L3_HRAM
-	endif
-else ifeq '$(MODEL_INPUT)' 'l2'
-	MODEL_INPUT=AT_MEM_L2
-else
-	$(error MODEL_INPUT can only be ram or l2)
-endif
 
 # this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
