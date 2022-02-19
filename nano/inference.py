@@ -4,6 +4,7 @@ import cv2
 import tensorrt as trt
 import pycuda.driver as cuda
 import numpy as np
+import json
 
 CLASSES = (
     'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -22,28 +23,51 @@ CLASSES = (
     'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 )
 
-def draw_dets(img, dets):
+#should be called after pruning
+#writes the dets to json in COCO format
+#note that bbox format is xywh rather than xyxy
+def write_dets(dets, fname, frame_id=0):
+    results = []
     for det in dets:
-        box = det[0:4]
+        b0, b1, b2, b3 = det[0:4]
+        x, y = float(b0), float(b1)
+        w, h = float(b2 - b0 + 1), float(b3 - b1 + 1)
+        results.append({'image_id': frame_id,
+                        'category_id': int(det[5]),
+                        'bbox': [x, y, w, h],
+                        'score': det[4] / 100})
+    with open(fname, 'w') as f:
+        f.write(json.dumps(results, indent=4))
+
+
+def prune_dets(dets, score_thres=0.1, valid_classes=CLASSES):
+    score_thres = score_thres * 100
+    valid_classes = set(valid_classes) #much faster if in a set
+    score_mask = dets[:, 4] >= score_thres
+    labels = [CLASSES[d] for d in dets[:, 5]]
+    label_mask = np.array([l in valid_classes for l in labels])
+    mask = score_mask & label_mask #both must be true
+    return dets[mask]
+
+def draw_dets(img, dets, color=(255, 255, 0)):
+    for det in dets:
+        b0, b1, b2, b3 = det[0:4]
         score = det[4]
-        if score < 10:
-            continue
         label = CLASSES[det[5]]
         img = cv2.rectangle(img,
-            (box[0], box[1]),
-            (box[2], box[3]),
-            (255,255,0),
+            (b0, b1),
+            (b2, b3),
+            color,
             thickness=1
         )
         img = cv2.putText(img,
             '%s: %s' % (label, score),
-            (box[0], box[1] - 4),
+            (b0, b1 - 4),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (255,255,0),
+            color,
             1
         )
-    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     return img
 
 def softmax(probs, axis=-1):

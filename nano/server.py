@@ -2,16 +2,9 @@ import socket
 import time 
 import numpy as np
 import cv2
-# from PIL import Image
-import random
-import os
 from trt_detector import TRTDetector
 from network import buff2numpy
-# import asyncio
-# import websockets
-# import queue
-# from threading import Thread
-from inference import draw_dets
+from inference import draw_dets, write_dets
 
 class NanoServer:
     def __init__(self, detector,
@@ -31,12 +24,11 @@ class NanoServer:
     def randbytes(self):
         return open("/dev/random","rb").read(4)
 
-    # def run(self, Q):
     def run(self):
-        print("nano detection server started")
+        print("detection server waiting for TCP conntection...")
         self.sock.listen(5)
         client, addr = self.sock.accept()
-        print("Connected:", addr) 
+        print("connected to client at %s" % addr[0]) 
         client.send(self.randbytes)
         counter = 0
         total_size = 0
@@ -45,10 +37,6 @@ class NanoServer:
         count = 0
         new_packet = False
 
-        # fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        # out = cv2.VideoWriter('/root/gap_runner/vid.mp4', fourcc, 30, (224, 224))
-
-        # vid = cv2.VideoWriter('/root/gap_runner/vid.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (224, 224))
         while True:
             start_time = time.time()
             content = client.recv(self.buffer_size)
@@ -63,7 +51,6 @@ class NanoServer:
                 continue
             elif int(content[1]) == 0:
                 start = True
-            
             packetData = content[4:]
             real_length = int(content[2]) << 8 | int(content[3])
             total_size += real_length
@@ -73,6 +60,7 @@ class NanoServer:
                 num_pixels = 224*224
                 img = buff2numpy(data[0:num_pixels], dtype=np.uint8)
                 img = img.reshape(224, 224)
+                img = np.stack([img] * 3, axis=-1) #convert to "color"
                 channels = buff2numpy(data[num_pixels:], dtype=np.int8)
                 channels = channels.reshape(8, 28, 28)
                 channels = channels.astype(np.float32)
@@ -83,58 +71,32 @@ class NanoServer:
                 channels = np.expand_dims(channels, axis=0) #1 C H W
                 dets = self.detector.detect(channels)
                 img = draw_dets(img, dets)
-                
-                # vid.write(img) 
-                # frame_num = str(count).zfill(5)
-                cv2.imwrite('/root/gap_runner/web/htdocs/imgs/frame.png', img)
+               
+
+                cv2.imwrite('/root/gap_runner/web/htdocs/imgs/frame.jpg', img)
                 for i in range(8):
                     h = channels[0, i] # H W
                     h = h / h.max() #note that h \in [0, 6] from ReLU6
                     h = h * 255
                     h = h.astype(np.uint8)
+                    h = cv2.applyColorMap(h, cv2.COLORMAP_JET)
                     fname = '/root/gap_runner/web/htdocs/imgs/h%d.png' % (i + 1)
                     cv2.imwrite(fname, h)
-
-                # if Q.qsize() == 0: 
-                    # Q.put_nowait(count)
+                
+                fname = '/root/gap_runner/web/htdocs/imgs/dets.json'
+                write_dets(dets, fname, count) #write to json
 
                 count += 1
                 data = b''
                 start = False
                 total_size = 0
-                print(count, time.time() - start_time)
-
-# def start_websocket_loop(loop, server):
-    # loop.run_until_complete(server)
-    # loop.run_forever()
-
-# async def image_notify(websocket, path, queue):
-    # while True:
-        # count = queue.get()
-        # await websocket.send("count %d" % count)
+                time_diff = time.time() - start_time
+                print('processed detection %d in %d ms' % (count, time_diff*1000))
                
 if __name__ == '__main__':
+    print("booting up nano detection server")
     detector = TRTDetector('/root/gap_runner/nano/suffix.trt')
+    print("TRT detector suffix opened")
     server = NanoServer(detector)
-
-    # websocket_loop = asyncio.new_event_loop()
-    
-    # imgqueue = queue.Queue()
-    
-    # start_server = websockets.serve(
-        # lambda ws, p : image_notify(ws,p,imgqueue),
-        # 'localhost', 8111, loop=websocket_loop
-    # )
-
-    # t1 = Thread(target=start_websocket_loop, args=(websocket_loop, start_server))
-    # t1.start()
-    
-    # server.run(imgqueue)
-    server.run()
-    
-    
-    # t2 = Thread(target=server.run, args=(imgqueue,))
-    # t2.start()
-
-    # while True:
-        # server.run()
+    while True:
+        server.run()

@@ -1,10 +1,9 @@
 import ctypes
 import numpy as np
-# import cv2
 import tensorrt as trt
 import pycuda.autoinit  # This is needed for initializing CUDA driver
 import pycuda.driver as cuda
-from inference import HostDeviceMem, get_input_shape, allocate_buffers, do_inference, nms_boxes
+from inference import HostDeviceMem, get_input_shape, allocate_buffers, do_inference, nms_boxes, prune_dets
 import time
 
 class TRTDetector(object):
@@ -96,8 +95,8 @@ class TRTDetector(object):
         classes = nms_dets[:, 5]
         
         # clip x1, y1, x2, y2 within original image
-        boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 0, img_w-1)
-        boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 0, img_h-1)
+        boxes[:, [0, 2]] = np.clip(boxes[:, [0, 2]], 4, img_w-4)
+        boxes[:, [1, 3]] = np.clip(boxes[:, [1, 3]], 16, img_h-4)
 
         dets = np.concatenate((
             boxes, 
@@ -106,6 +105,8 @@ class TRTDetector(object):
         axis=1)
 
         dets = dets.astype(np.uint16)
+        # dets = prune_dets(dets, valid_classes=('laptop',))
+        dets = prune_dets(dets)
         # if len(dets) > self.num_dets:
 
         # idx = np.argsort(-dets[:, -2]) #sort by score

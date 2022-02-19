@@ -27,7 +27,7 @@
         };
         
         function setup(){
-            imgs.push("imgs/frame.png");
+            imgs.push("imgs/frame.jpg");
             els.push(document.getElementById("frame")); 
             for (let i = 1; i <=8; i++) {
                 imgs.push("imgs/h" + i +".png");
@@ -57,11 +57,10 @@
         
         function startStream(){
             if(stream==false){
-                //refreshInterval = setInterval(function () {frame_count++;console.log(frame_count); refreshImages(frame_count);}, 250);
-                refreshInterval = setInterval(function () {frame_count++;console.log(frame_count); refreshImages(frame_count);}, 200);
+                refreshInterval = setInterval(function () {frame_count++;console.log(frame_count); refreshImages(frame_count);}, 250);
                 //ws = new WebSocket("ws://"+ip+":8111/");
                 //ws.onmessage = function (event) {console.log(event.data); refreshImages(event.data);}
-                console.log(ws)
+                //console.log(ws)
                 stream=true;
             }
         }
@@ -84,7 +83,7 @@
         <TABLE width=60%>
             <TR><TD>
                     <CENTER>Detections</CENTER>
-                    <IMG width="400" id="frame" SRC="imgs/frame.png">
+                    <IMG width="400" id="frame" SRC="imgs/frame.jpg">
                 </TD>
                 <TD>
                    <CENTER> Hidden Units</CENTER>
