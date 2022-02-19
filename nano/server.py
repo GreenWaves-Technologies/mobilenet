@@ -9,13 +9,17 @@ from inference import draw_dets, write_dets
 class NanoServer:
     def __init__(self, detector,
                  TCP_IP='0.0.0.0', TCP_PORT=8584,
-                 buffer_size=730
+                 buffer_size=730, from_img=False
     ):
         self.detector = detector
         self.TCP_IP = TCP_IP
         self.TCP_PORT = TCP_PORT
         self.buffer_size = buffer_size
-        self.target_bytes = 8*28*28 + 224*224
+        self.from_img = from_img
+        if self.from_img:
+            self.target_bytes = 224*224
+        else: 
+            self.target_bytes = 8*28*28 + 224*224
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.TCP_IP, self.TCP_PORT))
@@ -60,16 +64,23 @@ class NanoServer:
                 num_pixels = 224*224
                 img = buff2numpy(data[0:num_pixels], dtype=np.uint8)
                 img = img.reshape(224, 224)
-                img = np.stack([img] * 3, axis=-1) #convert to "color"
-                channels = buff2numpy(data[num_pixels:], dtype=np.int8)
-                channels = channels.reshape(8, 28, 28)
-                channels = channels.astype(np.float32)
-                channels = (channels - -128) * 0.02352941
+                if self.from_img:
+                    model_input = img.reshape(1, 1, 224, 224)
+                    model_input = model_input.astype(np.float32)
+                    model_input = (model_input - 114.0) / 57.0
+                    dets = self.detector.detect(model_input)
+                    channels = np.ones((1, 8, 28, 28))
+                else:
+                    channels = buff2numpy(data[num_pixels:], dtype=np.int8)
+                    channels = channels.reshape(8, 28, 28)
+                    channels = channels.astype(np.float32)
+                    channels = (channels - -128) * 0.02352941
+                    z_channels = np.zeros([32-8, 28, 28], dtype=np.float32)
+                    channels = np.concatenate([channels, z_channels], axis=0)
+                    channels = np.expand_dims(channels, axis=0) #1 C H W
+                    dets = self.detector.detect(channels)
                 
-                z_channels = np.zeros([32-8, 28, 28], dtype=np.float32)
-                channels = np.concatenate([channels, z_channels], axis=0)
-                channels = np.expand_dims(channels, axis=0) #1 C H W
-                dets = self.detector.detect(channels)
+                img = np.stack([img] * 3, axis=-1) #convert to "color"
                 img = draw_dets(img, dets)
                
 
@@ -94,9 +105,13 @@ class NanoServer:
                 print('processed detection %d in %d ms' % (count, time_diff*1000))
                
 if __name__ == '__main__':
+    from_img = False
     print("booting up nano detection server")
-    detector = TRTDetector('/root/gap_runner/nano/suffix.trt')
+    if from_img:
+        detector = TRTDetector('/root/gap_runner/nano/full.trt')
+    else:
+        detector = TRTDetector('/root/gap_runner/nano/suffix.trt')
     print("TRT detector suffix opened")
-    server = NanoServer(detector)
+    server = NanoServer(detector, from_img=from_img)
     while True:
         server.run()

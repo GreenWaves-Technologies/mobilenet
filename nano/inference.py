@@ -41,12 +41,16 @@ def write_dets(dets, fname, frame_id=0):
 
 
 def prune_dets(dets, score_thres=0.1, valid_classes=CLASSES):
+    num_dets = len(dets)
+    if num_dets == 0:
+        return dets
     score_thres = score_thres * 100
     valid_classes = set(valid_classes) #much faster if in a set
     score_mask = dets[:, 4] >= score_thres
     labels = [CLASSES[d] for d in dets[:, 5]]
-    label_mask = np.array([l in valid_classes for l in labels])
-    mask = score_mask & label_mask #both must be true
+    label_mask = [l in valid_classes for l in labels]
+    mask = np.array([score_mask[i] and label_mask[i] for i in range(num_dets)])
+    #mask = score_mask & label_mask #both must be true
     return dets[mask]
 
 def draw_dets(img, dets, color=(255, 255, 0)):
