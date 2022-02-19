@@ -62,48 +62,28 @@ struct pi_device cluster_dev;
 struct pi_cluster_conf conf;
 
 
-/*void open_uart() {*/
-    /*pi_uart_conf_init(&uart_conf);*/
-    /*uart_conf.baudrate_bps = BAUD;*/
-    /*uart_conf.uart_id = 0;*/
-    /*uart_conf.enable_tx = 1;*/
-    /*uart_conf.enable_rx = 1;*/
-    /*pi_open_from_conf(&uart, &uart_conf);*/
-    /*if (pi_uart_open(&uart)) {*/
-        /*printf("uart open failed\n");*/
-    /*} else {*/
-        /*printf("uart open\n");*/
-    /*}*/
-/*}*/
-
-
-/*void uart_read() {*/
-	/*pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC0);*/
-    /*rx_buffer = (uint8_t *) pmsis_l2_malloc((uint32_t) 2);*/
-    /*pi_task_t wait_task = {0};*/
-    /*pi_task_block(&wait_task);*/
-    /*pi_uart_read_async(&uart, rx_buffer, 2, &wait_task);*/
-    /*pi_task_wait_on(&wait_task);*/
-    /*printf("waiting over, got 1 byte with value %d\n",  rx_buffer[0]);*/
-	/*pi_pad_set_function(PI_PAD_46_B7_SPIM0_SCK, PI_PAD_FUNC3);*/
-/*}*/
-
-
-
-/*void send_img() {*/
-    /*for (int i = 0; i < AT_INPUT_HEIGHT; i++){*/
-        /*pi_uart_write(&uart, Input_1 + (i * AT_INPUT_WIDTH), AT_INPUT_WIDTH);*/
-    /*}*/
-/*}*/
-
 static void RunNetwork() {
     AT_CNN((unsigned char *) Input_1, ResOut);
 }
 
+void blink_wait(int num_secs) {
+    for (int i = 0; i < 5 * num_secs; i++) { //one loop iter is 200 ms
+        pi_gpio_pin_write(NULL, GPIO_USER_LED, 0);
+        pi_time_wait_us(100000); //100 ms
+        pi_gpio_pin_write(NULL, GPIO_USER_LED, 1);
+        pi_time_wait_us(100000);
+    } 
+    pi_gpio_pin_write(NULL, GPIO_USER_LED, 1);
+}
+
 int body(void){
-	uint32_t voltage =1200;
+    pi_gpio_pin_configure(NULL, GPIO_USER_LED, PI_GPIO_OUTPUT);
+	
+    /*uint32_t voltage =1200;*/
     pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
+
+    blink_wait(20);
 	
 	pi_hyperram_conf_init(&hyper_conf);
 	pi_open_from_conf(&EXTERNAL_RAM, &hyper_conf);
@@ -163,43 +143,14 @@ int body(void){
 	printf("Network Constructor was OK!\n");
 
     printf("entered main loop\n");
-    /*while (1) {*/
-    /*for(int i = 0; i < 100 ;i++) {*/
     while (1) {
-        /*uart_read();*/
-        /*start = rt_time_get_us();*/
-        captureImgAsync(Input_1);
-        /*printf("got img\n");*/
-        
-        /*for (int i = 0; i < 5; i++) {*/
-            /*spi_read_status[0] = 0x00;*/
-            /*send_spi(Input_1 + (i * 32));*/
-            /*pi_time_wait_us(100);*/
-        /*}*/
-        /*printf("sent over spi\n");*/
-
-        /*times[0] = rt_time_get_us() - start;*/
-       
-        /*start = rt_time_get_us();*/
-        /*if (rx_buffer[0]) {*/
-            /*send_img();*/
-        /*} */
-        /*times[1] = rt_time_get_us() - start;*/
-
-        /*start = rt_time_get_us();*/
+        pi_gpio_pin_write(NULL, GPIO_USER_LED, 1);
+        captureImgAsync(Input_1); //uses async call but waits
         pi_cluster_send_task_to_cl(&cluster_dev, task);
         printf("forward pass done\n");
-        /*times[2] = rt_time_get_us() - start;*/
-        
         transmitSPI(Input_1, AT_INPUT_SIZE, 0);
         transmitSPI(ResOut, 8*SPATIAL_DIM, 0);
-        /*start = rt_time_get_us();*/
-        /*for (int i=0; i < 8; i++) {*/
-            /*pi_uart_write(&uart, ResOut + i*SPATIAL_DIM, SPATIAL_DIM); */
-        /*}*/
-        /*times[1] += rt_time_get_us() - start;*/
-
-        /*pi_uart_write(&uart, times, 12); */
+        pi_gpio_pin_write(NULL, GPIO_USER_LED, 0);
     }
 
 
