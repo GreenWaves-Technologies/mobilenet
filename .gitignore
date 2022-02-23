@@ -11,3 +11,4 @@ accuracy_on_validation_data/*_emul
 *.DS_Store
 *__pycache__
 web/htdocs/imgs/*
+web/htdocs/history/*
