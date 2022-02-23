@@ -1,3 +1,5 @@
+import shutil
+import os
 import socket
 import time 
 import numpy as np
@@ -5,6 +7,7 @@ import cv2
 from trt_detector import TRTDetector
 from network import buff2numpy
 from inference import draw_dets, write_dets
+from datetime import datetime
 
 class NanoServer:
     def __init__(self, detector,
@@ -83,18 +86,37 @@ class NanoServer:
                 img = np.stack([img] * 3, axis=-1) #convert to "color"
                 img = draw_dets(img, dets)
                
-
-                cv2.imwrite('/root/gap_runner/web/htdocs/imgs/frame.jpg', img)
+                root = '/root/gap_runner/web/htdocs/'
+                timestamp = str(datetime.now())
+                timestamp = timestamp.split('.')[0]
+                timestamp = '-'.join(timestamp.split())
+                
+                fname = '%s/history/%s-img.jpg' % (root, timestamp)
+                ln_fname = '%s/imgs/frame.jpg' % root
+                cv2.imwrite(fname, img)
+                cv2.imwrite(ln_fname, img)
+                # os.system('ln -sf %s %s' % (img_fname, ln_fname))
+                # cv2.imwrite('%s/imgs/frame.jpg' % root, img)
+                # os.symlink(img_fname, '%s/imgs/img.jpg' % root)
+                # shutil.copy(img_fname, '%s/imgs/frame.jpg' % root)
                 for i in range(8):
                     h = channels[0, i] # H W
                     h = h / h.max() #note that h \in [0, 6] from ReLU6
                     h = h * 255
                     h = h.astype(np.uint8)
                     h = cv2.applyColorMap(h, cv2.COLORMAP_JET)
-                    fname = '/root/gap_runner/web/htdocs/imgs/h%d.png' % (i + 1)
+                    
+                    fname = '%s/history/%s-h%d.png' % (root, timestamp, i+1)
+                    ln_fname = '%s/imgs/h%d.png' % (root, i+1)
                     cv2.imwrite(fname, h)
+                    cv2.imwrite(ln_fname, h)
+                    # os.system('ln -sf %s %s' % (fname, ln_fname))
+                    #shutil.copy(fname, '%s/imgs/h%d.png' % (root, i+1))
+                    # os.symlink(fname, '/root/gap_runner/tmp.link')
+                    # os.rename('/root/gap_runner/tmp.link', ln_fname)
                 
-                fname = '/root/gap_runner/web/htdocs/imgs/dets.json'
+                # fname = '/root/gap_runner/web/htdocs/imgs/dets.json'
+                fname = '%s/history/%s-dets.json' % (root, timestamp)
                 write_dets(dets, fname, count) #write to json
 
                 count += 1
