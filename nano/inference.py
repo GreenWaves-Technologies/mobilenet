@@ -40,7 +40,7 @@ def write_dets(dets, fname, frame_id=0):
         f.write(json.dumps(results, indent=4))
 
 
-def prune_dets(dets, score_thres=0.1, valid_classes=CLASSES):
+def prune_dets(dets, score_thres=0.3, valid_classes=CLASSES):
     num_dets = len(dets)
     if num_dets == 0:
         return dets
