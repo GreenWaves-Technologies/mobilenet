@@ -18,7 +18,7 @@
 extern struct pi_device camera;
 extern pi_task_t task;
 extern void captureImgSync(uint8_t* buffer);
-extern void captureImgAsync(uint8_t* buffer);
+extern void captureImgAsync(uint8_t* buffer, int use_aeg);
 extern int open_camera_himax(struct pi_device *device);
 extern void crop(uint8_t *img);
 extern void cam_handler(void *args);

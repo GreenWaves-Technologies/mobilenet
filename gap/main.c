@@ -83,7 +83,7 @@ int body(void){
     pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
-    blink_wait(20);
+    blink_wait(15);
 	
 	pi_hyperram_conf_init(&hyper_conf);
 	pi_open_from_conf(&EXTERNAL_RAM, &hyper_conf);
@@ -141,16 +141,24 @@ int body(void){
 	    return 1;
 	}
 	printf("Network Constructor was OK!\n");
-
+    
+    int count = 1;
+    int use_aeg = 0;
     printf("entered main loop\n");
     while (1) {
         pi_gpio_pin_write(NULL, GPIO_USER_LED, 1);
-        captureImgAsync(Input_1); //uses async call but waits
+        if (count % 30 == 0) {
+            use_aeg = 1;
+        } else {
+            use_aeg = 0;
+        }
+        captureImgAsync(Input_1, use_aeg); //uses async call but waits
         pi_cluster_send_task_to_cl(&cluster_dev, task);
         printf("forward pass done\n");
         transmitSPI(Input_1, AT_INPUT_SIZE, 0);
         transmitSPI(ResOut, 8*SPATIAL_DIM, 0);
         pi_gpio_pin_write(NULL, GPIO_USER_LED, 0);
+        count++;
     }
 
 

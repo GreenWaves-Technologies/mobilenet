@@ -35,18 +35,27 @@ void cam_handler(void *arg) {
 }
 
 void crop(uint8_t *img) {
+    int offset = (CAMERA_WIDTH - AT_INPUT_WIDTH) / 2;
+    offset = offset - 10;
+    int i_start = (CAMERA_HEIGHT - AT_INPUT_HEIGHT);
     int ps = 0;
-    for (int i =0; i < CAMERA_HEIGHT; i++) {
+    for (int i =i_start; i < CAMERA_HEIGHT; i++) {
     	for (int j=0; j < CAMERA_WIDTH; j++) {
-    		if (i < AT_INPUT_HEIGHT && j < AT_INPUT_WIDTH) {
-    			img[ps] = img[i*CAMERA_WIDTH+j];
+            if ((i  - i_start) < AT_INPUT_HEIGHT && j < AT_INPUT_WIDTH) {
+            /*if (i < AT_INPUT_HEIGHT && j > 50 && j < (AT_INPUT_WIDTH + 50)) {*/
+    			img[ps] = img[i * CAMERA_WIDTH + j + offset];
     			ps++;
     		}
     	}
     }
 }
 
-void captureImgAsync(uint8_t* buffer) {
+void captureImgAsync(uint8_t* buffer, int run_aeg) {
+    if (run_aeg == 1) {
+        pi_camera_control(&camera, PI_CAMERA_CMD_AEG_INIT, 0);
+        rt_time_wait_us(1000000); //wait AEG init (takes ~100 ms)
+    } 
+    
     pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
     pi_task_callback(&task, cam_handler, NULL);
     pi_camera_capture_async(&camera, buffer, CAMERA_WIDTH * CAMERA_HEIGHT, &task);

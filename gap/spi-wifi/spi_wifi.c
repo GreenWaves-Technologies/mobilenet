@@ -19,7 +19,6 @@ struct pi_device gpio_highbit = { 0 };
 pi_gpio_e gpio_in_lowbit = PI_GPIO_A19_PAD_33_B12;
 pi_gpio_e gpio_in_highbit = PI_GPIO_A5_PAD_17_B40;
 uint32_t v_lowbit = 0, v_highbit = 0;
-
 unsigned char crc8Table[256];     /* 8-bit table */
 /*
 Initialize SPI and GPIOs
