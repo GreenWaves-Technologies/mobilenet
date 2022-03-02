@@ -48,11 +48,9 @@ ifeq ($(MODEL_NE16), 1)
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
 	MODEL_SUFFIX = _NE16
 	APP_CFLAGS += -Wno-discarded-qualifiers -DMODEL_NE16
-else
-ifeq ($(MODEL_HWC), 1)
+else ifeq ($(MODEL_HWC), 1)
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc
 	APP_CFLAGS += -DMODEL_HWC
-endif
 endif
 ifeq ($(MODEL_FP16), 1)
 	ifeq ($(MODEL_HWC), 1)
@@ -66,8 +64,6 @@ ifeq ($(MODEL_FP16), 1)
 	MODEL_SUFFIX = _FP16
 	APP_CFLAGS += -DFLOAT16
 	MAIN = main_fp16.c
-else
-	MODEL_SQ8=1 # use scale based quantization (tflite-like)
 endif
 
 include common/model_decl.mk
@@ -81,6 +77,7 @@ ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
 	TOTAL_STACK_SIZE = $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* 8)
 	FREQ_CL?=50
 	FREQ_FC?=50
+	FREQ_PE?=50
 	MODEL_L1_MEMORY=$(shell expr 128000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY=1350000
 	MODEL_L3_MEMORY=8000000
@@ -92,6 +89,7 @@ else
 		FREQ_CL?=50
 	endif
 	FREQ_FC?=250
+	FREQ_PE?=250
 	MODEL_L1_MEMORY=$(shell expr 60000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY?=300000
 	MODEL_L3_MEMORY=8000000
@@ -123,7 +121,7 @@ APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_
 # pass also macro defines to the compiler
 APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS)
 APP_CFLAGS += -DSTACK_SIZE=$(CLUSTER_STACK_SIZE) -DSLAVE_STACK_SIZE=$(CLUSTER_SLAVE_STACK_SIZE)
-APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DPERF -DMODEL_ID=$(MODEL_ID) -DFREQ_FC=$(FREQ_FC) -DFREQ_CL=$(FREQ_CL)
+APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DPERF -DMODEL_ID=$(MODEL_ID) -DFREQ_FC=$(FREQ_FC) -DFREQ_CL=$(FREQ_CL) -DFREQ_PE=$(FREQ_PE)
 APP_CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR)
 
 HAVE_CAMERA?=0
@@ -153,8 +151,9 @@ else ifeq '$(MODEL_L3_CONST)' 'ospiflash'
 	MODEL_L3_FLASH=AT_MEM_L3_OSPIFLASH
 else ifeq '$(MODEL_L3_CONST)' 'emram'
 	MODEL_L3_FLASH=AT_MEM_L3_MRAMFLASH
+	READFS_FLASH = mram
 else
-	$(error MODEL_L3_CONST can only be qspiflash or hflash)
+$(error MODEL_L3_CONST can only be qspiflash or hflash)
 endif
 
 
