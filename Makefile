@@ -111,6 +111,10 @@ PULP_APP = imagenet
 USE_PMSIS_BSP=1
 #PMSIS_OS?=pulpos
 
+export PMSIS_OS=pulpos
+
+
+
 APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
@@ -163,7 +167,7 @@ READFS_FILES=$(abspath $(MODEL_TENSORS))
 PLPBRIDGE_FLAGS += -f
 
 # all depends on the model
-all:: model
+#all:: model
 
 clean:: clean_model
 
