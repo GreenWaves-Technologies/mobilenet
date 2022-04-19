@@ -143,6 +143,8 @@ else ifeq '$(MODEL_L3_EXEC)' 'ospiram'
 	MODEL_L3_RAM=AT_MEM_L3_OSPIRAM
 else ifeq '$(MODEL_L3_EXEC)' 'hram'
 	MODEL_L3_RAM=AT_MEM_L3_HRAM
+else ifeq '$(MODEL_L3_EXEC)' 'default'
+	MODEL_L3_RAM=AT_MEM_L3_DEFAULTRAM
 else
 	$(error MODEL_L3_EXEC can only be qspiram or hram)
 endif
@@ -156,6 +158,8 @@ else ifeq '$(MODEL_L3_CONST)' 'ospiflash'
 else ifeq '$(MODEL_L3_CONST)' 'emram'
 	MODEL_L3_FLASH=AT_MEM_L3_MRAMFLASH
 	READFS_FLASH = mram
+else ifeq '$(MODEL_L3_CONST)' 'default'
+	MODEL_L3_FLASH=AT_MEM_L3_DEFAULTFLASH
 else
 $(error MODEL_L3_CONST can only be qspiflash or hflash)
 endif
