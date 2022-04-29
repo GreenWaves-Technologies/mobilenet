@@ -78,6 +78,7 @@
 
 #include "Gap.h"
 #include "gaplib/ImgIO.h"
+#include "../../power_meas_utils/measurments_utils.h"
 
 #ifdef __EMUL__
 #include <sys/types.h>

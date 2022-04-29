@@ -65,20 +65,22 @@ with open(file_at, newline='') as f:
 
 # parse board measurements
  #			 Total: Cycles:   74947815, Operations:  571351529, Operations/Cycle: 7.623325
-# Set VDD voltage as 1.20, FC Frequency as 250 MHz, CL Frequency = 175 MHz
-
+# Set FC Frequency as 239616468 MHz, CL Frequency = 239616468 MHz, PERIIPH Frequency = 239616468 MHz
+# Voltage: 650mV
 
 with open(file_log, newline='') as f:
 	out_log = f.readlines()
 	row = []
 	for line in out_log:
-		if 'Set VDD voltage' in line:
+		if 'Set FC Frequency' in line:
 #			print(line)
-			parse = line.replace(',','').replace(':','').split()
-			fre_fc = parse[8]
-			fre_cl = parse[13]
+			parse = line.replace(',','').replace(':','').replace('=','').split()
+			fre_fc = parse[4]
+			fre_cl = parse[8]
+			fre_pe = parse[12]
 			at_log['FREQ_FC'] = fre_fc
 			at_log['FREQ_CL'] = fre_cl
+			at_log['FREQ_PE'] = fre_pe
 			print(fre_fc,fre_cl)
 #			for item in parse:	
 #				print(item)
@@ -104,7 +106,7 @@ with open(file_log, newline='') as f:
 #				print(m['column'], float(m['value']))
 #				continue
 
-
+print(at_log)
 with open(file_name+".csv", "w", newline='') as file:
 	writer = csv.writer(file, delimiter='\t')
 	for item in at_log.keys():

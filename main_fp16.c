@@ -37,21 +37,14 @@ static void RunNetwork()
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
-  int start_timer = gap_cl_readhwtimer();
+  GPIO_HIGH();
   AT_CNN(ResOut);
-  int finish_timer = gap_cl_readhwtimer() - start_timer;
-  printf("Runner completed: %d Cycles\n", finish_timer);
+  GPIO_LOW();
 }
 
 int body(void)
 {
-	// Voltage-Frequency settings
-	uint32_t voltage =1200;
-	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
-	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
-	//PMU_set_voltage(voltage, 0);
-	printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
-		(float)voltage/1000, FREQ_FC, FREQ_CL);
+  OPEN_GPIO_MEAS();
 
 	// Open the cluster
 	struct pi_device cluster_dev;
@@ -59,6 +52,18 @@ int body(void)
 	pi_cluster_conf_init(&conf);
 	pi_open_from_conf(&cluster_dev, (void *)&conf);
 	pi_cluster_open(&cluster_dev);
+
+	// Voltage-Frequency settings
+	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
+	pi_freq_set(PI_FREQ_DOMAIN_PERIPH, FREQ_FC*1000*1000);
+	printf("Set FC Frequency as %d MHz, CL Frequency = %d MHz, PERIIPH Frequency = %d MHz\n",
+			pi_freq_get(PI_FREQ_DOMAIN_FC), pi_freq_get(PI_FREQ_DOMAIN_CL), pi_freq_get(PI_FREQ_DOMAIN_PERIPH));
+	#ifdef VOLTAGE
+	pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
+	pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
+	printf("Voltage: %dmV\n", VOLTAGE);
+	#endif
 
 	// Network Constructor
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!

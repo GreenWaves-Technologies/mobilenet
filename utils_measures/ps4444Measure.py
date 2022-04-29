@@ -70,7 +70,7 @@ except: # PicoNotOkError:
 # coupling type = PS4000a_DC = 1
 # range = PS4000a_2V = 7
 # analogOffset = 0 V
-chARange = 4 
+chARange = 3
 status["setChA"] = ps.ps4000aSetChannel(chandle, 0, 1, 1, chARange, 0)
 assert_pico_ok(status["setChA"])
 
@@ -82,29 +82,29 @@ assert_pico_ok(status["setChA"])
 # coupling type = PS4000a_DC = 1
 # range = PS4000a_2V = 7
 # analogOffset = 0 V
-chBRange = 4 
+chBRange = 3
 status["setChB"] = ps.ps4000aSetChannel(chandle, 1, 1, 1, chBRange, 0)
 assert_pico_ok(status["setChB"])
 
-######  Set up channel C: Memory #############
+######  Set up channel C: Trigger #############
 # handle = chandle
 # channel = PS4000a_CHANNEL_C = 2
 # enabled = 1
 # coupling type = PS4000a_DC = 1
 # range = PS4000a_2V = 7
 # analogOffset = 0 V
-chCRange = 4 
+chCRange = 8 #5V 
 status["setChC"] = ps.ps4000aSetChannel(chandle, 2, 1, 1, chCRange, 0)
 assert_pico_ok(status["setChC"])
 
-######  Set up channel D: Trigger #############
+######  Set up channel D: Memory #############
 # handle = chandle
 # channel = PS4000a_CHANNEL_D = 3
 # enabled = 1
 # coupling type = PS4000a_DC = 1
 # range = PS4000a_2V = 7
 # analogOffset = 0 V
-chDRange = 8 #5V
+chDRange = 3
 status["setChD"] = ps.ps4000aSetChannel(chandle, 3, 1, 1, chDRange, 0)
 assert_pico_ok(status["setChD"])
 
@@ -116,12 +116,12 @@ assert_pico_ok(status["setChD"])
 # direction = PS4000a_RISING = 2
 # delay = 0 s
 # auto Trigger = 1000 ms
-status["trigger"] = ps.ps4000aSetSimpleTrigger(chandle, 1, 3, 1024, 2, 0, 0)
+status["trigger"] = ps.ps4000aSetSimpleTrigger(chandle, 1, 2, 1024, 2, 0, 0)
 assert_pico_ok(status["trigger"])
 
 # Set number of pre and post trigger samples to be collected
 preTriggerSamples = 0
-postTriggerSamples = 4000000
+postTriggerSamples = 2000000
 maxSamples = preTriggerSamples + postTriggerSamples
 
 # Get timebase information
@@ -241,19 +241,19 @@ adc2mVChDMax =  adc2mV(bufferDMax, chDRange, maxADC)
 
 ## detect the last point
 last_point = postTriggerSamples
-for i,item in enumerate(bufferDMax[10:]):
-    if item < 5000:
+for i,item in enumerate(adc2mVChCMax[10:]):
+    if item < 1000:
         last_point = i+10
         break
-#print("Last point is ", last_point, "\nTime duration is = ", (last_point*timeIntervalns.value)/(1000*1000) ,' msec')
+print("Last point is ", last_point, "\nTime duration is = ", (last_point*timeIntervalns.value)/(1000*1000) ,' msec')
 
 
 # Compute Average
 CH_A_Avg = np.average(adc2mVChAMax[:last_point])
 CH_B_Avg = np.average(adc2mVChBMax[:last_point])
-CH_C_Avg = np.average(adc2mVChCMax[:last_point])
+CH_D_Avg = np.average(adc2mVChDMax[:last_point])
 n_Points = last_point
-print("Avg values {} {} {} over {} points!".format(CH_A_Avg,CH_B_Avg,CH_C_Avg,n_Points))
+print("Avg values {} {} {} over {} points!".format(CH_A_Avg,CH_B_Avg,CH_D_Avg,n_Points))
 
 with open(file_name+".csv", "w", newline='') as file:
     writer = csv.writer(file, delimiter=',')
@@ -262,19 +262,20 @@ with open(file_name+".csv", "w", newline='') as file:
 #    writer.writerow(adc2mVChCMax[:last_point])
     writer.writerow(['CH_A_Avg',CH_A_Avg])
     writer.writerow(['CH_B_Avg',CH_B_Avg])
-    writer.writerow(['CH_C_Avg',CH_C_Avg])
+    writer.writerow(['CH_D_Avg',CH_D_Avg])
     writer.writerow(['n_Points',n_Points])
 
 ## Create time data
-#time = np.linspace(0, (cmaxSamples.value) * timeIntervalns.value, cmaxSamples.value)
-## plot data from channel A and B
-#plt.plot(time[:last_point], adc2mVChAMax[:last_point])
-#plt.plot(time[:last_point], adc2mVChBMax[:last_point])
-#plt.plot(time[:last_point], adc2mVChCMax[:last_point])
-##plt.plot(time[:last_point], bufferDMax[:last_point])
-#plt.xlabel('Time (ns)')
-#plt.ylabel('Voltage (mV)')
-#plt.show()
+# time = np.linspace(0, (cmaxSamples.value) * timeIntervalns.value, cmaxSamples.value)
+# # plot data from channel A and B
+# plt.plot(time[:last_point], adc2mVChAMax[:last_point], label="Ch A")
+# plt.plot(time[:last_point], adc2mVChBMax[:last_point], label="Ch B")
+# plt.plot(time[:last_point], adc2mVChCMax[:last_point], label="Ch C")
+# plt.plot(time[:last_point], adc2mVChDMax[:last_point], label="Ch D")
+# plt.legend()
+# plt.xlabel('Time (ns)')
+# plt.ylabel('Voltage (mV)')
+# plt.show()
 
 # Stop the scope
 # handle = chandle

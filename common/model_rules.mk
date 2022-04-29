@@ -33,6 +33,9 @@ ifdef MODEL_L3_MEMORY
   MODEL_GEN_EXTRA_FLAGS += --L3 $(MODEL_L3_MEMORY)
 endif
 
+ifdef AT_LOG_LEVEL
+  MODEL_GEN_EXTRA_FLAGS += --log_level $(AT_LOG_LEVEL)
+endif
 
 $(MODEL_BUILD):
 	mkdir $(MODEL_BUILD)

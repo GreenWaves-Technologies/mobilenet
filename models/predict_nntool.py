@@ -15,6 +15,7 @@ input_data = import_data(input_image, norm_func=in_norm_func, transpose=transpos
 executer = GraphExecuter(G, qrecs=G.quantization)
 outputs = executer.execute([input_data], qmode=QuantizationMode.all(), silent=True)
 pred_class = np.argmax(outputs[-1])
-print(pred_class)
+print(f"Predicted class: {pred_class}")
+print(f"With confidence: {outputs[-1][0][pred_class]}")
 with open("nntool_prediction.txt", "w") as f:
 	f.write(f"Nntool Predict: {str(pred_class)}")

@@ -30,7 +30,7 @@ ifeq ($(AT_INPUT_WIDTH), 96)
 	IMAGE=$(CURDIR)/images/ILSVRC2012_val_00011158_96.ppm
 endif
 
-io=host
+io?=host
 
 QUANT_BITS=8
 BUILD_DIR=BUILD
@@ -95,12 +95,34 @@ else
 	MODEL_L3_MEMORY=8000000
 endif
 
-# hram - HyperBus RAM
-# qspiram - Quad SPI RAM
-MODEL_L3_EXEC=hram
-# hflash - HyperBus Flash
-# qpsiflash - Quad SPI Flash
-MODEL_L3_CONST=hflash
+FLASH_TYPE ?= HYPER
+RAM_TYPE   ?= HYPER
+
+ifeq '$(FLASH_TYPE)' 'HYPER'
+  MODEL_L3_FLASH=AT_MEM_L3_HFLASH
+else ifeq '$(FLASH_TYPE)' 'MRAM'
+  MODEL_L3_FLASH=AT_MEM_L3_MRAMFLASH
+  READFS_FLASH = target/chip/soc/mram
+else ifeq '$(FLASH_TYPE)' 'QSPI'
+  MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
+  READFS_FLASH = target/board/devices/spiflash
+else ifeq '$(FLASH_TYPE)' 'OSPI'
+  MODEL_L3_FLASH=AT_MEM_L3_OSPIFLASH
+  #READFS_FLASH = target/board/devices/ospiflash
+else ifeq '$(FLASH_TYPE)' 'DEFAULT'
+  MODEL_L3_FLASH=AT_MEM_L3_DEFAULTFLASH
+endif
+
+ifeq '$(RAM_TYPE)' 'HYPER'
+  MODEL_L3_RAM=AT_MEM_L3_HRAM
+else ifeq '$(RAM_TYPE)' 'QSPI'
+  MODEL_L3_RAM=AT_MEM_L3_QSPIRAM
+else ifeq '$(RAM_TYPE)' 'OSPI'
+  MODEL_L3_RAM=AT_MEM_L3_OSPIRAM
+else ifeq '$(RAM_TYPE)' 'DEFAULT'
+  MODEL_L3_RAM=AT_MEM_L3_DEFAULTRAM
+endif
+
 # ram - Model input from ram
 # l2  - Model input from l2 memory
 MODEL_INPUT=l2
@@ -117,9 +139,9 @@ export PMSIS_OS=pulpos
 
 APP = imagenet
 MAIN ?= main.c
-APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB)
+APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_EXPRESSIONS) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage
+APP_CFLAGS += -gdwarf-2 -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage
 # list of includes file
 APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler
@@ -137,33 +159,15 @@ ifeq ($(NO_IMAGE_FROM_HOST), 1)
 	APP_CFLAGS += -DNO_IMAGE_FROM_HOST
 endif
 
-ifeq '$(MODEL_L3_EXEC)' 'qspiram'
-	MODEL_L3_RAM=AT_MEM_L3_QSPIRAM
-else ifeq '$(MODEL_L3_EXEC)' 'ospiram'
-	MODEL_L3_RAM=AT_MEM_L3_OSPIRAM
-else ifeq '$(MODEL_L3_EXEC)' 'hram'
-	MODEL_L3_RAM=AT_MEM_L3_HRAM
-else ifeq '$(MODEL_L3_EXEC)' 'default'
-	MODEL_L3_RAM=AT_MEM_L3_DEFAULTRAM
-else
-	$(error MODEL_L3_EXEC can only be qspiram or hram)
+ifneq '$(platform)' 'gvsoc'
+ifdef MEAS
+APP_CFLAGS += -DGPIO_MEAS
 endif
-
-ifeq '$(MODEL_L3_CONST)' 'qspiflash'
-	MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
-else ifeq '$(MODEL_L3_CONST)' 'hflash'
-	MODEL_L3_FLASH=AT_MEM_L3_HFLASH
-else ifeq '$(MODEL_L3_CONST)' 'ospiflash'
-	MODEL_L3_FLASH=AT_MEM_L3_OSPIFLASH
-else ifeq '$(MODEL_L3_CONST)' 'emram'
-	MODEL_L3_FLASH=AT_MEM_L3_MRAMFLASH
-	READFS_FLASH = mram
-else ifeq '$(MODEL_L3_CONST)' 'default'
-	MODEL_L3_FLASH=AT_MEM_L3_DEFAULTFLASH
-else
-$(error MODEL_L3_CONST can only be qspiflash or hflash)
+VOLTAGE?=800
+ifeq '$(PMSIS_OS)' 'pulpos'
+	APP_CFLAGS += -DVOLTAGE=$(VOLTAGE)
 endif
-
+endif
 
 # this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
@@ -173,7 +177,7 @@ PLPBRIDGE_FLAGS += -f
 # all depends on the model
 #all:: model
 
-clean:: clean_model
+clean:: #clean_model
 
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)
