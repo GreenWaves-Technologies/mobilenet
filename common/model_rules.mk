@@ -76,7 +76,7 @@ $(MODEL_GEN_C): $(MODEL_GEN_EXE)
 	$(MODEL_GEN_EXE) -o $(MODEL_BUILD) -c $(MODEL_BUILD) $(MODEL_GEN_EXTRA_FLAGS)
 
 # A phony target to simplify including this in the main Makefile
-model: $(MODEL_GEN_C)
+model: $(MODEL_GEN_C) $(MODEL_EXPRESSIONS)
 
 clean_model:
 	$(RM) $(MODEL_GEN_EXE)
