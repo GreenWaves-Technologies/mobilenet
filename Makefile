@@ -175,9 +175,9 @@ READFS_FILES=$(abspath $(MODEL_TENSORS))
 PLPBRIDGE_FLAGS += -f
 
 # all depends on the model
-#all:: model
+all:: model
 
-clean:: #clean_model
+clean:: clean_model
 
 clean_at_model::
 	$(RM) $(MODEL_GEN_C)

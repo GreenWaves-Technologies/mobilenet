@@ -188,13 +188,8 @@ int body(void)
 	AT_DESTRUCT();
 	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);
-	if(strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v1_1_0_224_quant")==0){
-		#ifdef MODEL_NE16
-		int MaxPredictionGT = 11353;
-		#else
-		int MaxPredictionGT = 9561;
-		#endif
-		if(outclass==42 && MaxPrediction==MaxPredictionGT){
+	if((strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v1_1_0_224_quant")==0) || (strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v2_1_0_224_quant")==0)){
+		if(outclass==42){
 				printf("Test successful!\n");
 				pmsis_exit(0);
 			}
@@ -202,13 +197,7 @@ int body(void)
 				printf("Wrong results!\n");
 				pmsis_exit(-1);
 			}
-	}	
-	if(strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v2_1_0_224_quant")==0){
-		int MaxPredictionGT = 13627;
-		if(outclass==42 && MaxPrediction==MaxPredictionGT){ printf("Test successful!\n"); pmsis_exit(0);}
-		else { printf("Wrong results!\n"); pmsis_exit(-1); }
 	}
-
 	pmsis_exit(0);
 
 	return 0;
