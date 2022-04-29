@@ -21,7 +21,7 @@ set graph_monitor_cycles true
 #set graph_trace_exec true
 
 # Debug Checksum/Entire Tensor
-set graph_checksum 1
+#set graph_checksum 1
 #set graph_dump_tensor 0
 
 save_state

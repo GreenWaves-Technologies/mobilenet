@@ -96,6 +96,7 @@ int body(void)
 	}
 
 	// Network Constructor
+	printf("Constructing\n");
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
 	int err_const = AT_CONSTRUCT();
 	if (err_const)
@@ -103,9 +104,7 @@ int body(void)
 	  printf("Graph constructor exited with error: %d\n", err_const);
 	  pmsis_exit(-2);
 	}
-	printf("Network Constructor was OK! %x\n", *((uint32_t *) (0x1a102700 + 100)));
-	// *((uint32_t *) (0x1a102700 + 100)) = 0;
-	// printf("Network Constructor was OK! %x\n", *((uint32_t *) (0x1a102700 + 100)));
+	printf("Network Constructor was OK!\n");
 
 #ifdef HAVE_CAMERA
 	// Open Camera 
