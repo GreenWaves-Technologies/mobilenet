@@ -1,13 +1,7 @@
+qtune --step * scheme=float float_type=bfloat16 hwc=true
 adjust
 fusions --scale8
-imageformat input_1 rgb888 offset_int8
 nodeoption 0 ALLOCATE 1
-
-# Layer Settings
-nodeoption CONV_2D_0_0_fusion PARALLELFEATURES 0
-nodeoption DEPTHWISE_CONV_2D_0_1_fusion PARALLELFEATURES 0
-nodeoption DEPTHWISE_CONV_2D_0_3_fusion PARALLELFEATURES 0
-set graph_noinline_node true
 
 # RAM/FLASH Settings
 set l3_ram_device $(MODEL_L3_RAM)
@@ -21,7 +15,7 @@ set graph_monitor_cycles true
 #set graph_trace_exec true
 
 # Debug Checksum/Entire Tensor
-#set graph_checksum 1
+set graph_checksum 1
 #set graph_dump_tensor 0
 
 save_state

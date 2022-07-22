@@ -237,3 +237,9 @@ tar -xvf v3-large-minimalistic_224_1.0_uint8.tgz
 mv v3-large-minimalistic_224_1.0_uint8/v3-large-minimalistic_224_1.0_uint8.tflite models/tflite_models/mobilenet_v3_large_minimalistic_1_0_224_quant.tflite
 rm -rf v3-large-minimalistic_224_1.0_uint8/
 rm -rf v3-large-minimalistic_224_1.0_uint8.tgz
+
+wget https://storage.googleapis.com/mobilenet_v3/checkpoints/v3-small_224_1.0_uint8.tgz
+tar -xvf v3-small_224_1.0_uint8.tgz
+mv v3-small_224_1.0_uint8/v3-small_224_1.0_uint8.tflite models/tflite_models/mobilenet_v3_small_1_0_224_quant.tflite
+rm -rf v3-small_224_1.0_uint8/
+rm -rf v3-small_224_1.0_uint8.tgz

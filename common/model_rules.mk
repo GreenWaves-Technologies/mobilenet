@@ -33,6 +33,9 @@ ifdef MODEL_L3_MEMORY
   MODEL_GEN_EXTRA_FLAGS += --L3 $(MODEL_L3_MEMORY)
 endif
 
+ifdef AT_LOG_LEVEL
+  MODEL_GEN_EXTRA_FLAGS += --log_level $(AT_LOG_LEVEL)
+endif
 
 $(MODEL_BUILD):
 	mkdir $(MODEL_BUILD)
@@ -47,15 +50,7 @@ $(MODEL_TFLITE): $(TRAINED_TFLITE_MODEL) | $(MODEL_BUILD)
 #	Fuse nodes together to match fused AutoTiler generators
 #	Save the graph state files
 
-# ifeq '$(MODEL_L3_EXEC)' 'qspiram'
-# $(NNTOOL_SCRIPT)_prepared: $(NNTOOL_SCRIPT)
-# 	sed -e 's/_EXTERNAL_MEMORY_TYPE_/AT_MEM_L3_QSPIRAM/g' -e 's/_EXTERNAL_FLASH_TYPE_/AT_MEM_L3_QSPIFLASH/g' $(NNTOOL_SCRIPT) > $(NNTOOL_SCRIPT)_prepared
-# else
-# $(NNTOOL_SCRIPT)_prepared: $(NNTOOL_SCRIPT)
-# 	sed -e 's/_EXTERNAL_MEMORY_TYPE_/AT_MEM_L3_HRAM/g' -e 's/_EXTERNAL_FLASH_TYPE_/AT_MEM_L3_HFLASH/g' $(NNTOOL_SCRIPT) > $(NNTOOL_SCRIPT)_prepared
-# endif
-
-$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) | $(MODEL_BUILD)
+$(MODEL_STATE): $(MODEL_TFLITE) $(IMAGES) $(NNTOOL_SCRIPT) | $(MODEL_BUILD)
 	echo "GENERATING NNTOOL STATE FILE"
 	$(NNTOOL) -s $(NNTOOL_SCRIPT) $< $(QUANT_FLAG)
 
@@ -71,7 +66,7 @@ nntool_gen: $(MODEL_BUILD)/$(MODEL_SRC)
 # Build the code generator from the model code
 $(MODEL_GEN_EXE): $(CNN_GEN) $(MODEL_BUILD)/$(MODEL_SRC) $(EXTRA_GENERATOR_SRC) | $(MODEL_BUILD)
 	echo "COMPILING AUTOTILER MODEL"
-	gcc -g -o $(MODEL_GEN_EXE) -I. -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_GEN_INCLUDE) $(CNN_LIB_INCLUDE) $^ $(TILER_LIB) $(SDL_FLAGS)
+	gcc -g -o $(MODEL_GEN_EXE) -I. -I$(TILER_INC) -I$(TILER_EMU_INC) $(CNN_GEN_INCLUDE) $(CNN_LIB_INCLUDE) $^ $(TILER_LIB) $(SDL_FLAGS)
 
 compile_model: $(MODEL_GEN_EXE)
 
@@ -81,7 +76,7 @@ $(MODEL_GEN_C): $(MODEL_GEN_EXE)
 	$(MODEL_GEN_EXE) -o $(MODEL_BUILD) -c $(MODEL_BUILD) $(MODEL_GEN_EXTRA_FLAGS)
 
 # A phony target to simplify including this in the main Makefile
-model: $(MODEL_GEN_C)
+model: $(MODEL_GEN_C) $(MODEL_EXPRESSIONS)
 
 clean_model:
 	$(RM) $(MODEL_GEN_EXE)

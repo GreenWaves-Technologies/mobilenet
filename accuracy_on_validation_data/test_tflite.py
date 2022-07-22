@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 import tensorflow as tf
 import sys,os
 import glob
@@ -25,6 +25,7 @@ def main():
 	output_details = interpreter.get_output_details()
 	print('Input details: ', input_details)
 	print('Output details: ', output_details)
+	out_feat = output_details[0]['shape'][1]
 	scale, zero_point = input_details[0]['quantization']
 
 	#prepare file to write
@@ -35,13 +36,16 @@ def main():
 	for gt_class, synset in enumerate(ORDERED_SYNSET):
 		data_path = os.path.join(DATASET_DIR, synset)
 		for img_path in glob.glob(data_path + "/*.p*"):
-			img = np.array(Image.open(img_path))
+			img = np.array(Image.open(img_path)) -128
+			img = img.astype('int8')
 			interpreter.set_tensor(input_details[0]['index'], img.reshape(input_details[0]['shape']))
 			interpreter.invoke()
 			output = interpreter.get_tensor(output_details[0]['index'])
-			predicted_class = np.argmax(output)
+			predicted_class = np.argmax(output)+1
+#			print(predicted_class)
 			corrects += 1 if predicted_class == gt_class else 0
-			counter += 1
+			if out_feat == 1000:
+				counter += 1
 		log__str = "Pred/Tot: {}/{} Accuracy: {}%".format(corrects, counter, 0 if counter==0 else corrects/counter*100)
 		
 		print(log__str)

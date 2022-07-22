@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 import sys
 import matplotlib.pyplot as plt
 import os
@@ -45,7 +45,7 @@ def main():
 			shell_command = 'make clean all run platform={} MODEL_ID={}'.format(TARGET_PLATFORM, model_id)
 			print(shell_command)
 			stream = os.popen(shell_command)
-			platform_log = stream.readlines()
+                        platform_log = stream.readlines()
 		except Exception:
 			print("Out of time Exception: Model did not end the execution in the TIMEOUT = {}".format(TIMEOUT))
 			platform_log = []

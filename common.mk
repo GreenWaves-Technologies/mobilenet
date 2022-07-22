@@ -287,6 +287,14 @@ ifeq ($(MODEL_ID), 33)
 endif
 
 ifeq ($(MODEL_ID), 34)
+	MODEL_PREFIX?=mcunet_imagenet_best
+	AT_INPUT_WIDTH?=144
+	AT_INPUT_HEIGHT?=144
+	AT_INPUT_COLORS?=3
+	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
+endif
+
+ifeq ($(MODEL_ID), 35)
 	MODEL_PREFIX?=squeezenet
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
@@ -299,4 +307,7 @@ endif
 AT_CONSTRUCT = $(MODEL_PREFIX)CNN_Construct
 AT_DESTRUCT = $(MODEL_PREFIX)CNN_Destruct
 AT_CNN = $(MODEL_PREFIX)CNN
+AT_L2_MEM_ADDR = $(MODEL_PREFIX)_L2_Memory
+AT_L1_MEM_ADDR = $(MODEL_PREFIX)_L1_Memory
+AT_L3_RAM_ADDR = $(MODEL_PREFIX)_L3_Memory
 AT_L3_ADDR = $(MODEL_PREFIX)_L3_Flash
