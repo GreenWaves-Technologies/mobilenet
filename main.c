@@ -147,7 +147,7 @@ int body(void)
 	#endif
 
 	// Task setup
-	struct pi_cluster_task* task = (struct pi_cluster_task*)pmsis_l2_malloc(sizeof(struct pi_cluster_task));
+	struct pi_cluster_task* task = (struct pi_cluster_task*)pi_l2_malloc(sizeof(struct pi_cluster_task));
 
 	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
     pi_cluster_task(task, (void (*)(void *))&RunNetwork, NULL);
