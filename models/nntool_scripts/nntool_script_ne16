@@ -4,6 +4,8 @@ adjust
 fusions --scale8
 nodeoption 0 ALLOCATE 1
 
+#set graph_async_fork true
+
 # RAM/FLASH Settings
 set l3_ram_device $(MODEL_L3_RAM)
 set l3_flash_device $(MODEL_L3_FLASH)

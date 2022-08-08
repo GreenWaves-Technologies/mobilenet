@@ -9,6 +9,8 @@ nodeoption DEPTHWISE_CONV_2D_0_1_fusion PARALLELFEATURES 0
 nodeoption DEPTHWISE_CONV_2D_0_3_fusion PARALLELFEATURES 0
 set graph_noinline_node true
 
+#set graph_async_fork true
+
 # RAM/FLASH Settings
 set l3_ram_device $(MODEL_L3_RAM)
 set l3_flash_device $(MODEL_L3_FLASH)
