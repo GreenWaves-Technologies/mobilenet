@@ -79,7 +79,7 @@ ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
 	FREQ_FC?=50
 	FREQ_PE?=50
 	MODEL_L1_MEMORY=$(shell expr 128000 \- $(TOTAL_STACK_SIZE))
-	MODEL_L2_MEMORY=1350000
+	MODEL_L2_MEMORY?=1350000
 	MODEL_L3_MEMORY=8000000
 else
 	CLUSTER_STACK_SIZE?=6144
@@ -161,10 +161,11 @@ ifneq '$(platform)' 'gvsoc'
 ifdef MEAS
 APP_CFLAGS += -DGPIO_MEAS
 endif
-VOLTAGE?=800
-ifeq '$(PMSIS_OS)' 'pulpos'
-	APP_CFLAGS += -DVOLTAGE=$(VOLTAGE)
 endif
+
+#VOLTAGE?=800
+ifdef VOLTAGE
+	APP_CFLAGS += -DVOLTAGE=$(VOLTAGE)
 endif
 
 # this line is needed to flash into the chip the model tensors
