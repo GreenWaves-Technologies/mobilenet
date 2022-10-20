@@ -7,6 +7,14 @@ nodeoption 0 ALLOCATE 1
 imageformat input_1 rgb888 offset_int8
 set input_norm_func 'x: x'
 
+# RAM/FLASH Settings
+set l3_ram_device $(MODEL_L3_RAM)
+set l3_flash_device $(MODEL_L3_FLASH)
+
+set privileged_l3_flash_device $(MODEL_SEC_L3_FLASH)
+set privileged_l3_flash_size 2000000
+
+set graph_const_exec_from_flash true
 set graph_produce_node_names true
 set graph_produce_operinfos true
 set graph_monitor_cycles true

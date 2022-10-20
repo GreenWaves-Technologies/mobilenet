@@ -90,3 +90,6 @@ If HAVE_CAMERA is not set, the application loads a [sample image](images) from f
 - accuracy_on_validation_data: this folder contains everything related to the accuracy check of the model on the target GAP chip. It uses the \_\_EMUL\_\_ mode supported by the GAP*flow*. The usage of this tool is explained in its relative directory [documentation](accuracy_on_validation_data/README.md).
 - [common.mk](common.mk): defines the topology parameters which will be passed as macro defines to your application code.
 
+## Power Analysis on GAP9
+
+Every model has been tested on GAP9 chip to evaluate performance and power consumption. The devise used is a picoscope

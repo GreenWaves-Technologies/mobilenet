@@ -1,132 +1,63 @@
-if [ -z $GAP_SDK_HOME ]; then
-	echo "Source the sdk before"
-	exit 1
+ID=0
+NE16=1
+FP16=1
+
+START_MODEL=20
+STOP_MODEL=33
+SEC_FLASH=1
+LOG_DIR="log_meas"
+if [[ ! -e $LOG_DIR ]]; then
+    mkdir $LOG_DIR
 fi
 
-START_MODEL=33
-STOP_MODEL=33
-LOGDIR=logs
-mkdir -p $LOGDIR/
-##########################################
-FP16=0
-HWC=0
-MODES=('CHW' 'NE16' 'HWC') # 'FP16_CHW' 'FP16_HWC')
+MAIN=main.c
+SUFF="sq8"
+if [ ${NE16} -eq 1 ]
+then
+	SUFF="ne16"
+fi
+if [ ${FP16} -eq 1 ]
+then
+	MAIN=main_fp16.c
+	SUFF="fp16"
+fi
 
-export RAM_TYPE="OSPI"
-export FLASH_TYPE="OSPI"
-export AT_LOG_LEVEL=2
-export PMSIS_OS=pulpos
-
-for MODEL_ID in `seq $START_MODEL $STOP_MODEL`;
-do
-	for MODE in "${MODES[@]}"
-	do
-		case $MODE in
-			CHW)
-				export MODEL_NE16=0
-				export MODEL_FP16=0
-				export MODEL_HWC=0
-				;;
-			NE16)
-				export MODEL_NE16=1
-				export MODEL_FP16=0
-				export MODEL_HWC=0
-				;;
-			HWC)
-				export MODEL_NE16=0
-				export MODEL_FP16=0
-				export MODEL_HWC=1
-				;;
-			FP16_CHW)
-				export MODEL_NE16=0
-				export MODEL_FP16=1
-				export MODEL_HWC=0
-				;;
-			FP16_HWC)
-				export MODEL_NE16=0
-				export MODEL_FP16=1
-				export MODEL_HWC=1
-				;;
-			*)
-				echo "Mode $MODE not supported"
-				exit 1
-		esac
-		MODEL_EXT="${MODEL_ID}"
-		if [ ${MODEL_NE16} -gt 0 ]; then
-			MODEL_EXT="${MODEL_EXT}_NE16"
-		else
-			if [ ${MODEL_FP16} -gt 0 ]; then
-				MODEL_EXT="${MODEL_EXT}_FP16"
-			fi
-			if [ ${MODEL_HWC} -gt 0 ]; then
-				MODEL_EXT="${MODEL_EXT}_HWC"
-			fi
-		fi
-		echo "Running mode $MODE: MODEL_ID=$MODEL_ID MODEL_NE16=$MODEL_NE16 MODEL_FP16=$MODEL_FP16 MODEL_HWC=$MODEL_HWC RAM_TYPE=$RAM_TYPE FLASH_TYPE=$FLASH_TYPE AT_LOG_LEVEL=$AT_LOG_LEVEL"
-		make clean clean_model model MODEL_ID=$MODEL_ID MODEL_NE16=$MODEL_NE16 MODEL_FP16=$MODEL_FP16 MODEL_HWC=$MODEL_HWC RAM_TYPE=$RAM_TYPE FLASH_TYPE=$FLASH_TYPE AT_LOG_LEVEL=$AT_LOG_LEVEL \
-				> $LOGDIR/atmodel\_${MODEL_EXT}.txt
-		# check if the autotiler found a solution
-		python3 utils_measures/parse_at_file.py $LOGDIR/atmodel\_${MODEL_EXT}.txt
-		if [ $? -eq "1" ]; then
-			echo "Something went wrong with the model generation"
-			continue
-		fi
-
-		# compile and flash
-		make all -j MODEL_ID=$MODEL_ID MODEL_NE16=$MODEL_NE16 MODEL_FP16=$MODEL_FP16 MODEL_HWC=$MODEL_HWC RAM_TYPE=$RAM_TYPE FLASH_TYPE=$FLASH_TYPE AT_LOG_LEVEL=$AT_LOG_LEVEL
-
-		for LOW_POWER_MODE in 0 1 ;
+wait_finished_job() {
+	if [ $? -eq "1" ]; then # kill the measurement job
+		for job in `jobs -p`
 		do
-			if [ $LOW_POWER_MODE -gt 0 ]; then
-				FREQ=240
-				export VOLTAGE=650
-			else
-				FREQ=370
-				export VOLTAGE=800
-			fi
-			export FREQ_CL=$FREQ
-			export FREQ_FC=$FREQ
-			export FREQ_PE=$FREQ
-			DVFS_FLAGS="FREQ_FC=$FREQ_FC FREQ_CL=$FREQ_CL FREQ_PE=$FREQ_PE VOLTAGE=$VOLTAGE"
-
-			LOG_EXT="${MODEL_EXT}_${FREQ}_${VOLTAGE}"
-
-			# generate the model
-			echo "$LOG_EXT"
-			touch BUILD_MODEL_SQ8BIT/*
-			touch BUILD_MODEL_NE16/*
-			touch BUILD_MODEL_FP16/*
-			touch main.c
-			touch main_fp16.c
-
-			# compile and run on board
-			make build -j MODEL_ID=$MODEL_ID MODEL_NE16=$MODEL_NE16 MODEL_FP16=$MODEL_FP16 MODEL_HWC=$MODEL_HWC RAM_TYPE=$RAM_TYPE FLASH_TYPE=$FLASH_TYPE AT_LOG_LEVEL=$AT_LOG_LEVEL
-			python3 utils_measures/ps4444Measure.py $LOGDIR/power\_${LOG_EXT} & 
-			make run MODEL_ID=$MODEL_ID MODEL_NE16=$MODEL_NE16 MODEL_FP16=$MODEL_FP16 MODEL_HWC=$MODEL_HWC RAM_TYPE=$RAM_TYPE FLASH_TYPE=$FLASH_TYPE AT_LOG_LEVEL=$AT_LOG_LEVEL \
-					> $LOGDIR/output\_board\_log\_${LOG_EXT}.txt
-
-			# check if any error in the grph constructor
-			python3 utils_measures/parse_out_file.py $LOGDIR/output\_board\_log\_${LOG_EXT}.txt
-			if [ $? -eq "1" ]; then # kill the measurement job
-				for job in `jobs -p`
-				do
-					echo $job
-				    kill -9 $job
-				done
-				continue
-			else # wait measurment job
-				for job in `jobs -p`
-				do
-					echo $job
-				    wait $job
-				done
-			fi
-
-			python3 utils_measures/editlog.py $LOGDIR/power\_${LOG_EXT}.csv $LOGDIR/atmodel\_${MODEL_EXT}.txt $LOGDIR/output\_board\_log\_${LOG_EXT}.txt $LOGDIR/log\_${LOG_EXT}
-
-			rm $LOGDIR/power\_${LOG_EXT}.csv
-			rm $LOGDIR/output\_board\_log\_${LOG_EXT}.txt
+			echo $job
+			kill -9 $job
 		done
-		rm $LOGDIR/atmodel\_${MODEL_EXT}.txt
-	done
+		continue
+	else # wait measurment job
+		for job in `jobs -p`
+		do
+			echo $job
+			wait $job
+		done
+	fi
+}
+
+for ID in `seq $START_MODEL $STOP_MODEL`;
+do
+	touch ${MAIN}
+	make_cmd="make MODEL_ID=${ID} USE_PRIVILEGED_FLASH=${SEC_FLASH} MODEL_NE16=${NE16} MODEL_FP16=${FP16} MODEL_HWC=1"
+	echo ${make_cmd}
+	${make_cmd} model > ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_at.log
+	${make_cmd} io=uart all -j
+
+	# High Performance
+	F=370
+	V=800
+	python $GAP_SDK_HOME/utils/power_meas_utils/ps4444Measure.py ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_${F}MHz_${V}mV & touch ${MAIN} && \
+	${make_cmd} MEAS=1 FREQ_CL=${F} FREQ_FC=${F} FREQ_PE=${F} VOLTAGE=${V} io=uart run
+	wait_finished_job
+
+	# Energy Efficient
+	F=240
+	V=650
+	python $GAP_SDK_HOME/utils/power_meas_utils/ps4444Measure.py ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_${F}MHz_${V}mV & touch ${MAIN} && \
+	${make_cmd} MEAS=1 FREQ_CL=${F} FREQ_FC=${F} FREQ_PE=${F} VOLTAGE=${V} io=uart run
+	wait_finished_job
 done

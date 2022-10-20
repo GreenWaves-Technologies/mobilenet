@@ -45,7 +45,11 @@ MODEL_SUFFIX=_SQ8BIT
 TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
 
 ifeq ($(MODEL_NE16), 1)
+	ifeq ($(MODEL_ID), 33)
+	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_mbv3_small_ne16	
+	else
 	NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_ne16	
+	endif
 	MODEL_SUFFIX = _NE16
 	APP_CFLAGS += -Wno-discarded-qualifiers -DMODEL_NE16
 else ifeq ($(MODEL_HWC), 1)
@@ -54,8 +58,8 @@ else ifeq ($(MODEL_HWC), 1)
 endif
 ifeq ($(MODEL_FP16), 1)
 	ifeq ($(MODEL_HWC), 1)
-		NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc_fp16
 		APP_CFLAGS += -DMODEL_HWC
+		NNTOOL_SCRIPT=models/nntool_scripts/nntool_script_hwc_fp16
 	else
 		NNTOOL_SCRIPT = models/nntool_scripts/nntool_script_fp16
 	endif
@@ -81,6 +85,7 @@ ifeq '$(TARGET_CHIP_FAMILY)' 'GAP9'
 	MODEL_L1_MEMORY=$(shell expr 128000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY?=1350000
 	MODEL_L3_MEMORY=8000000
+	USE_PRIVILEGED_FLASH?=1
 else
 	CLUSTER_STACK_SIZE?=6144
 	CLUSTER_SLAVE_STACK_SIZE?=512
@@ -95,6 +100,13 @@ else
 	MODEL_L1_MEMORY=$(shell expr 60000 \- $(TOTAL_STACK_SIZE))
 	MODEL_L2_MEMORY?=300000
 	MODEL_L3_MEMORY=8000000
+	USE_PRIVILEGED_FLASH=0
+endif
+
+ifeq ($(USE_PRIVILEGED_FLASH), 1)
+MODEL_SEC_L3_FLASH=AT_MEM_L3_MRAMFLASH
+else
+MODEL_SEC_L3_FLASH=
 endif
 
 FLASH_TYPE ?= DEFAULT
@@ -107,10 +119,8 @@ else ifeq '$(FLASH_TYPE)' 'MRAM'
   READFS_FLASH = target/chip/soc/mram
 else ifeq '$(FLASH_TYPE)' 'QSPI'
   MODEL_L3_FLASH=AT_MEM_L3_QSPIFLASH
-  READFS_FLASH = target/board/devices/spiflash
 else ifeq '$(FLASH_TYPE)' 'OSPI'
   MODEL_L3_FLASH=AT_MEM_L3_OSPIFLASH
-  #READFS_FLASH = target/board/devices/ospiflash
 else ifeq '$(FLASH_TYPE)' 'DEFAULT'
   MODEL_L3_FLASH=AT_MEM_L3_DEFAULTFLASH
 endif
@@ -146,21 +156,17 @@ APP_CFLAGS += -I. -I$(GAP_SDK_HOME)/utils/power_meas_utils -I$(MODEL_COMMON_INC)
 APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS)
 APP_CFLAGS += -DSTACK_SIZE=$(CLUSTER_STACK_SIZE) -DSLAVE_STACK_SIZE=$(CLUSTER_SLAVE_STACK_SIZE)
 APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DPERF -DMODEL_ID=$(MODEL_ID) -DFREQ_FC=$(FREQ_FC) -DFREQ_CL=$(FREQ_CL) -DFREQ_PE=$(FREQ_PE)
-APP_CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR)
-
-HAVE_CAMERA?=0
-NO_IMAGE_FROM_HOST?=0
-ifeq ($(HAVE_CAMERA), 1)
-	APP_CFLAGS += -DHAVE_CAMERA
-endif
-ifeq ($(NO_IMAGE_FROM_HOST), 1)
-	APP_CFLAGS += -DNO_IMAGE_FROM_HOST
-endif
+APP_CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR) -DAT_L3_2_ADDR=$(AT_L3_2_ADDR)
 
 ifneq '$(platform)' 'gvsoc'
 ifdef MEAS
 APP_CFLAGS += -DGPIO_MEAS
 endif
+endif
+
+# Option to not read image (faster)
+ifdef FAKE_INPUT
+APP_CFLAGS += -DFAKE_INPUT
 endif
 
 #VOLTAGE?=800
@@ -171,7 +177,10 @@ endif
 # this line is needed to flash into the chip the model tensors
 # and other constants needed by the Autotiler
 READFS_FILES=$(abspath $(MODEL_TENSORS))
-PLPBRIDGE_FLAGS += -f
+#PLPBRIDGE_FLAGS += -f
+ifneq ($(MODEL_SEC_L3_FLASH), )
+  runner_args += --flash-property=$(CURDIR)/$(MODEL_SEC_TENSORS)@mram:readfs:files
+endif
 
 # build depends on the model
 build:: model
@@ -183,7 +192,7 @@ clean_at_model::
 	$(RM) $(MODEL_GEN_EXE)
 
 nntool_predict: $(MODEL_STATE)
-	$(NNTOOL) -s models/nntool_scripts/predict_script $(MODEL_STATE)
+	python models/predict_nntool.py $(MODEL_STATE)
 
 TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
