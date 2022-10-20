@@ -198,6 +198,10 @@ TFLITE_PYSCRIPT= models/tflite_inference.py
 test_tflite:
 	python $(TFLITE_PYSCRIPT) -t $(TRAINED_TFLITE_MODEL) -i $(IMAGE)
 
+DATASET_PATH=
+test_accuracy_nntool:
+	python models/test_accuracy_tflite.py $(MODEL_STATE) $(DATASET_PATH)
+
 include common/model_rules.mk
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
