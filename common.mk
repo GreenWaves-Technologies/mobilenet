@@ -48,7 +48,7 @@ ifeq ($(MODEL_ID), 4)
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
-	MODEL_L2_MEMORY?=325000
+	#MODEL_L2_MEMORY?=325000
 endif
 
 ifeq ($(MODEL_ID), 5)
@@ -89,7 +89,7 @@ ifeq ($(MODEL_ID), 9)
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv1
-	MODEL_L2_MEMORY?=325000
+	#MODEL_L2_MEMORY?=325000
 endif
 
 ifeq ($(MODEL_ID), 10)
@@ -146,7 +146,7 @@ ifeq ($(MODEL_ID), 16)
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
-	MODEL_L2_MEMORY?=350000
+	#MODEL_L2_MEMORY?=350000
 endif
 
 ifeq ($(MODEL_ID), 17)
@@ -155,7 +155,7 @@ ifeq ($(MODEL_ID), 17)
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
 	NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script_mbv2
-	MODEL_L2_MEMORY?=275000 # The code size is too big in this model
+	#MODEL_L2_MEMORY?=275000 # The code size is too big in this model
 endif
 
 ifeq ($(MODEL_ID), 18)
@@ -311,3 +311,4 @@ AT_L2_MEM_ADDR = $(MODEL_PREFIX)_L2_Memory
 AT_L1_MEM_ADDR = $(MODEL_PREFIX)_L1_Memory
 AT_L3_RAM_ADDR = $(MODEL_PREFIX)_L3_Memory
 AT_L3_ADDR = $(MODEL_PREFIX)_L3_Flash
+AT_L3_2_ADDR = $(MODEL_PREFIX)_L3_PrivilegedFlash

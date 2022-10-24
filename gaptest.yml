@@ -17,28 +17,28 @@ variants:
             - release
         duration: standard
         flags: ~
-    # mobilenetv2:
-    #     name: mobilenetv2
-    #     tags:
-    #         - integration
-    #         - release
-    #     duration: standard
-    #     flags: MODEL_ID=17
-    # float16:
-    #     name: float16
-    #     tags:
-    #         - integration
-    #         - release
-    #     duration: standard
-    #     chips:
-    #         - gap9
-    #     flags: MODEL_FP16=1
-    # ne16:
-    #     name: ne16
-    #     tags:
-    #         - integration
-    #         - release
-    #     duration: standard
-    #     chips:
-    #         - gap9
-    #     flags: MODEL_NE16=1
+    mobilenetv2_ne16:
+        name: mobilenetv2
+        tags:
+            - integration
+            - release
+        duration: standard
+        flags: MODEL_ID=17 MODEL_NE16=1
+    float16_hwc:
+        name: float16
+        tags:
+            - integration
+            - release
+        duration: standard
+        chips:
+            - gap9
+        flags: MODEL_FP16=1 MODEL_HWC=1
+    ne16:
+        name: ne16
+        tags:
+            - integration
+            - release
+        duration: standard
+        chips:
+            - gap9
+        flags: MODEL_NE16=1

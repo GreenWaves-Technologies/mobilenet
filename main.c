@@ -15,10 +15,6 @@
  */
 
 #include "pmsis.h"
-#ifdef HAVE_CAMERA
-#include "bsp/camera/himax.h"
-#endif
-
 #include "main.h"
 
 /* Defines */
@@ -27,29 +23,12 @@
 
 #define __XSTR(__s) __STR(__s)
 #define __STR(__s) #__s 
-#ifdef HAVE_CAMERA	
-	#define CAMERA_WIDTH    (324)
-	#define CAMERA_HEIGHT   (244)
-	#define CAMERA_SIZE   	(CAMERA_HEIGHT*CAMERA_WIDTH)
-	struct pi_device camera;
-	static int open_camera_himax(struct pi_device *device)
-	{
-	  struct pi_himax_conf cam_conf;
-
-	  pi_himax_conf_init(&cam_conf);
-	  pi_open_from_conf(device, &cam_conf);
-	  if (pi_camera_open(device))
-	    return -1;
-
-	  return 0;
-
-	}
-#endif
 
 typedef signed short int NETWORK_OUT_TYPE;
 // Global Variables
 L2_MEM NETWORK_OUT_TYPE *ResOut;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_2_ADDR = 0;
 
 static void RunNetwork()
 {
@@ -74,9 +53,16 @@ int body(void)
 	struct pi_cluster_conf conf;
 	pi_cluster_conf_init(&conf);
 	conf.cc_stack_size = STACK_SIZE;
+                     // Enable the special icache for the master core
+  conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |
+		                 // Enable the prefetch for all the cores, it's a 9bits mask (from bit 2 to bit 10), each bit correspond to 1 core
+		                 PI_CLUSTER_ICACHE_PREFETCH_ENABLE |
+		                 // Enable the icache for all the cores
+		                 PI_CLUSTER_ICACHE_ENABLE;
 	pi_open_from_conf(&cluster_dev, (void *)&conf);
 	pi_cluster_open(&cluster_dev);
 
+	// Voltage-Frequency settings
 	pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC*1000*1000);
 	pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 	pi_freq_set(PI_FREQ_DOMAIN_PERIPH, FREQ_PE*1000*1000);
@@ -85,18 +71,17 @@ int body(void)
 	#ifdef VOLTAGE
 	pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
 	pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
-	printf("Voltage: %dmV\n", VOLTAGE);
 	#endif
+	printf("Voltage: %dmV\n", pi_pmu_voltage_get(PI_PMU_VOLTAGE_DOMAIN_CHIP));
 
 	// Allocate the output tensor
 	ResOut = (NETWORK_OUT_TYPE *) AT_L2_ALLOC(0, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	if (ResOut==0) {
 		printf("Failed to allocate Memory for Result (%ld bytes)\n", 2*sizeof(char));
-	  	pmsis_exit(-1);
+  	pmsis_exit(-1);
 	}
 
 	// Network Constructor
-	printf("Constructing\n");
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
 	int err_const = AT_CONSTRUCT();
 	if (err_const)
@@ -104,52 +89,26 @@ int body(void)
 	  printf("Graph constructor exited with error: %d\n", err_const);
 	  pmsis_exit(-2);
 	}
-	printf("Network Constructor was OK!\n");
 
-#ifdef HAVE_CAMERA
-	// Open Camera 
-	if (open_camera_himax(&camera))
-	{
-		printf("Failed to open camera\n");
-		pmsis_exit(-2);
-	}
-
-	// Get an image 
-    pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
-    pi_camera_capture(&camera, Input_1, CAMERA_SIZE);
-    pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
-
-    // Image Cropping to [ AT_INPUT_HEIGHT x AT_INPUT_WIDTH ]
-    int ps=0;
-    for(int i =0;i<CAMERA_HEIGHT;i++){
-    	for(int j=0;j<CAMERA_WIDTH;j++){
-    		if (i<AT_INPUT_HEIGHT && j<AT_INPUT_WIDTH){
-    			Input_1[ps] = Input_1[i*CAMERA_WIDTH+j];
-    			ps++;
-    		}
-    	}
-    }
-#else
+#ifndef FAKE_INPUT
 	char *ImageName = __XSTR(AT_IMAGE);
-	printf("Reading image from %s\n",ImageName);
-
 	//Reading Image from Bridge
 	img_io_out_t type = IMGIO_OUTPUT_CHAR;
 	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, 0)) {
 		printf("Failed to load image %s\n", ImageName);
 		pmsis_exit(-1);
 	}
-	printf("Finished reading image %s\n", ImageName);
-#endif
-
+	printf("Finished reading image\n");
+#endif // FAKE_INPUT
 	#ifdef MODEL_HWC // HWC does not have the image formatter in front
 		for (int i=0; i<AT_INPUT_SIZE; i++) Input_1[i] -= 128;
 	#endif
 
 	// Task setup
-	struct pi_cluster_task* task = (struct pi_cluster_task*)pmsis_l2_malloc(sizeof(struct pi_cluster_task));
+	struct pi_cluster_task* task = (struct pi_cluster_task*)pi_l2_malloc(sizeof(struct pi_cluster_task));
 
 	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
+	printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
     pi_cluster_task(task, (void (*)(void *))&RunNetwork, NULL);
     pi_cluster_task_stacks(task, NULL, SLAVE_STACK_SIZE);
 	// Dispatch task on the cluster 
@@ -163,24 +122,25 @@ int body(void)
 			MaxPrediction = ResOut[i];
 		}
 	}
-	printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
 	printf("Predicted class:\t%d\n", outclass);
 	printf("With confidence:\t%d\n", MaxPrediction);
 
 
 	// Performance counters
 #ifdef PERF
-	{
-		unsigned int TotalCycles = 0, TotalOper = 0;
-		printf("\n");
-		for (unsigned int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
-			printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], AT_GraphOperInfosNames[i], ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);
-			TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
-		}
-		printf("\n");
-		printf("%45s: Cycles: %10d, Operations: %10d, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
-		printf("\n");
-	}
+    {
+      unsigned int TotalCycles = 0, TotalOper = 0;
+      printf("\n");
+      for (unsigned int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
+        TotalCycles += AT_GraphPerf[i]; TotalOper += AT_GraphOperInfosNames[i];
+      }
+      for (unsigned int i=0; i<(sizeof(AT_GraphPerf)/sizeof(unsigned int)); i++) {
+        printf("%45s: Cycles: %12u, Cyc%%: %5.1f%%, Operations: %12u, Op%%: %5.1f%%, Operations/Cycle: %f\n", AT_GraphNodeNames[i], AT_GraphPerf[i], 100*((float) (AT_GraphPerf[i]) / TotalCycles), AT_GraphOperInfosNames[i], 100*((float) (AT_GraphOperInfosNames[i]) / TotalOper), ((float) AT_GraphOperInfosNames[i])/ AT_GraphPerf[i]);
+      }
+      printf("\n");
+      printf("%45s: Cycles: %12u, Cyc%%: 100.0%%, Operations: %12u, Op%%: 100.0%%, Operations/Cycle: %f\n", "Total", TotalCycles, TotalOper, ((float) TotalOper)/ TotalCycles);
+      printf("\n");
+    }
 #endif
 
 	// Netwrok Destructor
