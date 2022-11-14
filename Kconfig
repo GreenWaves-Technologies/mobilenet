@@ -39,6 +39,14 @@ menu "Mobilenet menu"
             bool "FP16 Model"
             select CNN_FP16
 
+        config MODEL_SQ8_HWC
+            bool "SQ8 Model"
+            select CNN_SQ8
+
+        config MODEL_FP16_HWC
+            bool "FP16 Model"
+            select CNN_FP16
+
         config MODEL_NE16
             bool "NE16 Model"
             select CNN_NE16

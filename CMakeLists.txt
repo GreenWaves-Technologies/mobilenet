@@ -48,9 +48,25 @@ setup_cmake()
 include(${CMAKE_CURRENT_SOURCE_DIR}/common.cmake)
 model_choice()
 
-if(DEFINED CONFIG_MODEL_FP16)
+if(DEFINED CONFIG_MODEL_SQ8_HWC)
+    message(STATUS ">> Building SQ8 HWC MobileNet model <<")
+    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc)
+    set(MODEL_SUFFIX _sq8)
+
+elseif(DEFINED CONFIG_MODEL_SQ8)
+    message(STATUS ">> Building SQ8 MobileNet model <<")
+    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script)
+    set(MODEL_SUFFIX _sq8)
+
+elseif(DEFINED CONFIG_MODEL_FP16)
     message(STATUS ">> Building FP16 MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_fp16)
+    set(MODEL_SUFFIX _fp16)
+    set(MAIN main_fp16.c)
+
+elseif(DEFINED CONFIG_MODEL_FP16_HWC)
+    message(STATUS ">> Building FP16 HWC MobileNet model <<")
+    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc_fp16)
     set(MODEL_SUFFIX _fp16)
     set(MAIN main_fp16.c)
 
@@ -59,10 +75,6 @@ elseif(DEFINED CONFIG_MODEL_NE16)
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_ne16)
     set(MODEL_SUFFIX _ne16)
 
-elseif(DEFINED CONFIG_MODEL_SQ8)
-    message(STATUS ">> Building SQ8 MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script)
-    set(MODEL_SUFFIX _sq8)
 
 endif()
 
@@ -120,6 +132,9 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DAT_CONSTRUCT=${AT_CONSTRUCT}
                                 -DAT_DESTRUCT=${AT_DESTRUCT}
                                 -DAT_CNN=${AT_CNN})
+if (DEFINED PERF_CI)
+list(APPEND TARGET_PREPROCESSOR -DPERF_CI=${PERF_CI})
+endif()
 
 project(${TARGET_NAME} C ASM)
 add_executable(${TARGET_NAME} ${TARGET_SRCS})

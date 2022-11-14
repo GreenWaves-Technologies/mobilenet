@@ -1,4 +1,5 @@
 name: image_classification_networks
+builder: cmake
 boards: []
 platforms: 
     - board
@@ -16,14 +17,14 @@ variants:
             - integration
             - release
         duration: standard
-        flags: ~
+        flags: CONFIG_MODEL_SQ8=1
     mobilenetv2_ne16:
         name: mobilenetv2
         tags:
             - integration
             - release
         duration: standard
-        flags: MODEL_ID=17 MODEL_NE16=1
+        flags: CONFIG_MODEL_ID=17 CONFIG_MODEL_NE16=1 PERF_CI=15000000
     float16_hwc:
         name: float16
         tags:
@@ -32,7 +33,7 @@ variants:
         duration: standard
         chips:
             - gap9
-        flags: MODEL_FP16=1 MODEL_HWC=1
+        flags: CONFIG_MODEL_FP16=1 CONFIG_MODEL_HWC=1 PERF_CI=120000000
     ne16:
         name: ne16
         tags:
@@ -41,4 +42,4 @@ variants:
         duration: standard
         chips:
             - gap9
-        flags: MODEL_NE16=1
+        flags: CONFIG_MODEL_NE16=1 PERF_CI=16000000
