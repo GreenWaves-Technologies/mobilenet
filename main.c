@@ -162,6 +162,7 @@ int body(void)
 			printf("Error in CI for performance: we expected to be faster: %d > %d\n", TotalCycles, PERF_CI);
 			pmsis_exit(-1);
 		}
+    printf("Performance Regression passed\n");
 	#endif
 	pmsis_exit(0);
 
