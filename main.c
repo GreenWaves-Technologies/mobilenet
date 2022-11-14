@@ -15,7 +15,7 @@
  */
 
 #include "pmsis.h"
-#include "main.h"
+#include "mobilenet.h"
 
 /* Defines */
 #define NUM_CLASSES 	1001
@@ -27,8 +27,8 @@
 typedef signed short int NETWORK_OUT_TYPE;
 // Global Variables
 L2_MEM NETWORK_OUT_TYPE *ResOut;
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_ADDR = 0;
-AT_HYPERFLASH_FS_EXT_ADDR_TYPE AT_L3_2_ADDR = 0;
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE mobilenet_L3_Flash = 0;
+AT_HYPERFLASH_FS_EXT_ADDR_TYPE mobilenet_L3_PrivilegedFlash = 0;
 
 static void RunNetwork()
 {

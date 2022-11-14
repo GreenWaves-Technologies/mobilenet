@@ -11,7 +11,7 @@ MODEL_ID?=0
 
 
 ifeq ($(MODEL_ID), 0)
-	MODEL_PREFIX?=mobilenet_v1_1_0_224_quant
+	MODEL_NAME?=mobilenet_v1_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -19,7 +19,7 @@ ifeq ($(MODEL_ID), 0)
 endif
 
 ifeq ($(MODEL_ID), 1)
-	MODEL_PREFIX?=mobilenet_v1_1_0_192_quant
+	MODEL_NAME?=mobilenet_v1_1_0_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -27,7 +27,7 @@ ifeq ($(MODEL_ID), 1)
 endif
 
 ifeq ($(MODEL_ID), 2)
-	MODEL_PREFIX?=mobilenet_v1_1_0_160_quant
+	MODEL_NAME?=mobilenet_v1_1_0_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -35,7 +35,7 @@ ifeq ($(MODEL_ID), 2)
 endif
 
 ifeq ($(MODEL_ID), 3)
-	MODEL_PREFIX?=mobilenet_v1_1_0_128_quant
+	MODEL_NAME?=mobilenet_v1_1_0_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -43,7 +43,7 @@ ifeq ($(MODEL_ID), 3)
 endif
 
 ifeq ($(MODEL_ID), 4)
-	MODEL_PREFIX?=mobilenet_v1_0_75_224_quant
+	MODEL_NAME?=mobilenet_v1_0_75_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -52,7 +52,7 @@ ifeq ($(MODEL_ID), 4)
 endif
 
 ifeq ($(MODEL_ID), 5)
-	MODEL_PREFIX?=mobilenet_v1_0_75_192_quant
+	MODEL_NAME?=mobilenet_v1_0_75_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -60,7 +60,7 @@ ifeq ($(MODEL_ID), 5)
 endif
 
 ifeq ($(MODEL_ID), 6)
-	MODEL_PREFIX?=mobilenet_v1_0_75_160_quant
+	MODEL_NAME?=mobilenet_v1_0_75_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -68,7 +68,7 @@ ifeq ($(MODEL_ID), 6)
 endif
 
 ifeq ($(MODEL_ID), 7)
-	MODEL_PREFIX?=mobilenet_v1_0_75_128_quant
+	MODEL_NAME?=mobilenet_v1_0_75_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -76,7 +76,7 @@ ifeq ($(MODEL_ID), 7)
 endif
 
 ifeq ($(MODEL_ID), 8)
-	MODEL_PREFIX?=mobilenet_v1_0_5_224_quant
+	MODEL_NAME?=mobilenet_v1_0_5_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -84,7 +84,7 @@ ifeq ($(MODEL_ID), 8)
 endif
 
 ifeq ($(MODEL_ID), 9)
-	MODEL_PREFIX?=mobilenet_v1_0_5_192_quant
+	MODEL_NAME?=mobilenet_v1_0_5_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -93,7 +93,7 @@ ifeq ($(MODEL_ID), 9)
 endif
 
 ifeq ($(MODEL_ID), 10)
-	MODEL_PREFIX?=mobilenet_v1_0_5_160_quant
+	MODEL_NAME?=mobilenet_v1_0_5_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -101,7 +101,7 @@ ifeq ($(MODEL_ID), 10)
 endif
 
 ifeq ($(MODEL_ID), 11)
-	MODEL_PREFIX?=mobilenet_v1_0_5_128_quant
+	MODEL_NAME?=mobilenet_v1_0_5_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -109,7 +109,7 @@ ifeq ($(MODEL_ID), 11)
 endif
 
 ifeq ($(MODEL_ID), 12)
-	MODEL_PREFIX?=mobilenet_v1_0_25_224_quant
+	MODEL_NAME?=mobilenet_v1_0_25_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -117,7 +117,7 @@ ifeq ($(MODEL_ID), 12)
 endif
 
 ifeq ($(MODEL_ID), 13)
-	MODEL_PREFIX?=mobilenet_v1_0_25_192_quant
+	MODEL_NAME?=mobilenet_v1_0_25_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -125,7 +125,7 @@ ifeq ($(MODEL_ID), 13)
 endif
 
 ifeq ($(MODEL_ID), 14)
-	MODEL_PREFIX?=mobilenet_v1_0_25_160_quant
+	MODEL_NAME?=mobilenet_v1_0_25_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -133,7 +133,7 @@ ifeq ($(MODEL_ID), 14)
 endif
 
 ifeq ($(MODEL_ID), 15)
-	MODEL_PREFIX?=mobilenet_v1_0_25_128_quant
+	MODEL_NAME?=mobilenet_v1_0_25_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -141,7 +141,7 @@ ifeq ($(MODEL_ID), 15)
 endif
 
 ifeq ($(MODEL_ID), 16)
-	MODEL_PREFIX?=mobilenet_v2_1_4_224_quant
+	MODEL_NAME?=mobilenet_v2_1_4_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -150,7 +150,7 @@ ifeq ($(MODEL_ID), 16)
 endif
 
 ifeq ($(MODEL_ID), 17)
-	MODEL_PREFIX?=mobilenet_v2_1_0_224_quant
+	MODEL_NAME?=mobilenet_v2_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -159,7 +159,7 @@ ifeq ($(MODEL_ID), 17)
 endif
 
 ifeq ($(MODEL_ID), 18)
-	MODEL_PREFIX?=mobilenet_v2_1_0_192_quant
+	MODEL_NAME?=mobilenet_v2_1_0_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -167,7 +167,7 @@ ifeq ($(MODEL_ID), 18)
 endif
 
 ifeq ($(MODEL_ID), 19)
-	MODEL_PREFIX?=mobilenet_v2_1_0_160_quant
+	MODEL_NAME?=mobilenet_v2_1_0_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -175,7 +175,7 @@ ifeq ($(MODEL_ID), 19)
 endif
 
 ifeq ($(MODEL_ID), 20)
-	MODEL_PREFIX?=mobilenet_v2_1_0_128_quant
+	MODEL_NAME?=mobilenet_v2_1_0_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -183,7 +183,7 @@ ifeq ($(MODEL_ID), 20)
 endif
 
 ifeq ($(MODEL_ID), 21)
-	MODEL_PREFIX?=mobilenet_v2_1_0_96_quant
+	MODEL_NAME?=mobilenet_v2_1_0_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
@@ -191,7 +191,7 @@ ifeq ($(MODEL_ID), 21)
 endif
 
 ifeq ($(MODEL_ID), 22)
-	MODEL_PREFIX?=mobilenet_v2_0_75_224_quant
+	MODEL_NAME?=mobilenet_v2_0_75_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -199,7 +199,7 @@ ifeq ($(MODEL_ID), 22)
 endif
 
 ifeq ($(MODEL_ID), 23)
-	MODEL_PREFIX?=mobilenet_v2_0_75_192_quant
+	MODEL_NAME?=mobilenet_v2_0_75_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -207,7 +207,7 @@ ifeq ($(MODEL_ID), 23)
 endif
 
 ifeq ($(MODEL_ID), 24)
-	MODEL_PREFIX?=mobilenet_v2_0_75_160_quant
+	MODEL_NAME?=mobilenet_v2_0_75_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -215,7 +215,7 @@ ifeq ($(MODEL_ID), 24)
 endif
 
 ifeq ($(MODEL_ID), 25)
-	MODEL_PREFIX?=mobilenet_v2_0_75_128_quant
+	MODEL_NAME?=mobilenet_v2_0_75_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -223,7 +223,7 @@ ifeq ($(MODEL_ID), 25)
 endif
 
 ifeq ($(MODEL_ID), 26)
-	MODEL_PREFIX?=mobilenet_v2_0_75_96_quant
+	MODEL_NAME?=mobilenet_v2_0_75_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
@@ -231,7 +231,7 @@ ifeq ($(MODEL_ID), 26)
 endif
 
 ifeq ($(MODEL_ID), 27)
-	MODEL_PREFIX?=mobilenet_v2_0_5_224_quant
+	MODEL_NAME?=mobilenet_v2_0_5_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -239,7 +239,7 @@ ifeq ($(MODEL_ID), 27)
 endif
 
 ifeq ($(MODEL_ID), 28)
-	MODEL_PREFIX?=mobilenet_v2_0_5_192_quant
+	MODEL_NAME?=mobilenet_v2_0_5_192_quant
 	AT_INPUT_WIDTH?=192
 	AT_INPUT_HEIGHT?=192
 	AT_INPUT_COLORS?=3
@@ -247,7 +247,7 @@ ifeq ($(MODEL_ID), 28)
 endif
 
 ifeq ($(MODEL_ID), 29)
-	MODEL_PREFIX?=mobilenet_v2_0_5_160_quant
+	MODEL_NAME?=mobilenet_v2_0_5_160_quant
 	AT_INPUT_WIDTH?=160
 	AT_INPUT_HEIGHT?=160
 	AT_INPUT_COLORS?=3
@@ -255,7 +255,7 @@ ifeq ($(MODEL_ID), 29)
 endif
 
 ifeq ($(MODEL_ID), 30)
-	MODEL_PREFIX?=mobilenet_v2_0_5_128_quant
+	MODEL_NAME?=mobilenet_v2_0_5_128_quant
 	AT_INPUT_WIDTH?=128
 	AT_INPUT_HEIGHT?=128
 	AT_INPUT_COLORS?=3
@@ -263,7 +263,7 @@ ifeq ($(MODEL_ID), 30)
 endif
 
 ifeq ($(MODEL_ID), 31)
-	MODEL_PREFIX?=mobilenet_v2_0_5_96_quant
+	MODEL_NAME?=mobilenet_v2_0_5_96_quant
 	AT_INPUT_WIDTH?=96
 	AT_INPUT_HEIGHT?=96
 	AT_INPUT_COLORS?=3
@@ -271,7 +271,7 @@ ifeq ($(MODEL_ID), 31)
 endif
 
 ifeq ($(MODEL_ID), 32)
-	MODEL_PREFIX?=mobilenet_v3_large_minimalistic_1_0_224_quant
+	MODEL_NAME?=mobilenet_v3_large_minimalistic_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -279,7 +279,7 @@ ifeq ($(MODEL_ID), 32)
 endif
 
 ifeq ($(MODEL_ID), 33)
-	MODEL_PREFIX?=mobilenet_v3_small_1_0_224_quant
+	MODEL_NAME?=mobilenet_v3_small_1_0_224_quant
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3
@@ -287,7 +287,7 @@ ifeq ($(MODEL_ID), 33)
 endif
 
 ifeq ($(MODEL_ID), 34)
-	MODEL_PREFIX?=mcunet_imagenet_best
+	MODEL_NAME?=mcunet_imagenet_best
 	AT_INPUT_WIDTH?=144
 	AT_INPUT_HEIGHT?=144
 	AT_INPUT_COLORS?=3
@@ -295,7 +295,7 @@ ifeq ($(MODEL_ID), 34)
 endif
 
 ifeq ($(MODEL_ID), 35)
-	MODEL_PREFIX?=squeezenet
+	MODEL_NAME?=squeezenet
 	AT_INPUT_WIDTH?=224
 	AT_INPUT_HEIGHT?=224
 	AT_INPUT_COLORS?=3

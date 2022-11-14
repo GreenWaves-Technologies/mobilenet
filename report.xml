@@ -1,0 +1,14 @@
+<testsuite name="testsuite" timestamp=".2022-10-28T17:2:51." failures="0" tests="4" errors="0" skipped="0">
+<testcase name="image_classification_networks_float16" time="image_classification_networks_float16" >
+<success/>
+</testcase>
+<testcase name="image_classification_networks_mobilenetv2" time="image_classification_networks_mobilenetv2" >
+<success/>
+</testcase>
+<testcase name="image_classification_networks_ne16" time="image_classification_networks_ne16" >
+<success/>
+</testcase>
+<testcase name="image_classification_networks_standard" time="image_classification_networks_standard" >
+<success/>
+</testcase>
+</testsuite>

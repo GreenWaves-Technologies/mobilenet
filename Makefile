@@ -8,6 +8,7 @@ ifndef GAP_SDK_HOME
   $(error Source sourceme in gap_sdk first)
 endif
 
+MODEL_PREFIX=mobilenet
 include common.mk
 QUANT_FLAG ?= -q
 
@@ -42,7 +43,7 @@ MODEL_HWC ?= 0
 
 NNTOOL_SCRIPT?=models/nntool_scripts/nntool_script
 MODEL_SUFFIX=_SQ8BIT
-TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_PREFIX).tflite
+TRAINED_TFLITE_MODEL=models/tflite_models/$(MODEL_NAME).tflite
 
 ifeq ($(MODEL_NE16), 1)
 	ifeq ($(MODEL_ID), 33)
@@ -66,7 +67,6 @@ ifeq ($(MODEL_FP16), 1)
 	CLUSTER_STACK_SIZE=6096
 	QUANT_BITS = 0
 	MODEL_SUFFIX = _FP16
-	APP_CFLAGS += -DFLOAT16
 	MAIN = main_fp16.c
 endif
 
@@ -149,11 +149,11 @@ APP = imagenet
 MAIN ?= main.c
 APP_SRCS += $(MAIN) $(MODEL_GEN_C) $(MODEL_EXPRESSIONS) $(MODEL_COMMON_SRCS) $(CNN_LIB)
 
-APP_CFLAGS += -gdwarf-2 -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage
+APP_CFLAGS += -gdwarf-2 -g -O3 -mno-memcpy -fno-tree-loop-distribute-patterns -fstack-usage -fno-exceptions
 # list of includes file
 APP_CFLAGS += -I. -I$(GAP_SDK_HOME)/utils/power_meas_utils -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) $(CNN_LIB_INCLUDE) -I$(MODEL_BUILD) -I$(MODEL_HEADERS)
 # pass also macro defines to the compiler
-APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS)
+APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_NAME) $(MODEL_SIZE_CFLAGS)
 APP_CFLAGS += -DSTACK_SIZE=$(CLUSTER_STACK_SIZE) -DSLAVE_STACK_SIZE=$(CLUSTER_SLAVE_STACK_SIZE)
 APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DPERF -DMODEL_ID=$(MODEL_ID) -DFREQ_FC=$(FREQ_FC) -DFREQ_CL=$(FREQ_CL) -DFREQ_PE=$(FREQ_PE)
 APP_CFLAGS += -DAT_CONSTRUCT=$(AT_CONSTRUCT) -DAT_DESTRUCT=$(AT_DESTRUCT) -DAT_CNN=$(AT_CNN) -DAT_L3_ADDR=$(AT_L3_ADDR) -DAT_L3_2_ADDR=$(AT_L3_2_ADDR)
