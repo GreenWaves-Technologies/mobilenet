@@ -40,6 +40,8 @@ set(MAIN                main.c)
 
 include($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
 
+set(APP_MSG_PREFIX "[${BoldRed}${TARGET_NAME}${ColourReset}]")
+
 ###############################################################################
 # Application's kconfig options
 ###############################################################################
@@ -48,29 +50,29 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/common.cmake)
 model_choice()
 
 if(DEFINED CONFIG_MODEL_SQ8_HWC)
-    message(STATUS ">> Building SQ8 HWC MobileNet model <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Building SQ8 HWC MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc)
     set(MODEL_SUFFIX _sq8)
 
 elseif(DEFINED CONFIG_MODEL_SQ8)
-    message(STATUS ">> Building SQ8 MobileNet model <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Building SQ8 MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script)
     set(MODEL_SUFFIX _sq8)
 
 elseif(DEFINED CONFIG_MODEL_FP16)
-    message(STATUS ">> Building FP16 MobileNet model <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Building FP16 MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_fp16)
     set(MODEL_SUFFIX _fp16)
     set(MAIN main_fp16.c)
 
 elseif(DEFINED CONFIG_MODEL_FP16_HWC)
-    message(STATUS ">> Building FP16 HWC MobileNet model <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Building FP16 HWC MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc_fp16)
     set(MODEL_SUFFIX _fp16)
     set(MAIN main_fp16.c)
 
 elseif(DEFINED CONFIG_MODEL_NE16)
-    message(STATUS ">> Building NE16 MobileNet model <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Building NE16 MobileNet model <<")
     set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_ne16)
     set(MODEL_SUFFIX _ne16)
 
@@ -84,7 +86,7 @@ set(IMAGE images/ILSVRC2012_val_00011158_${AT_INPUT_WIDTH}.ppm)
 ###############################################################################
 
 if (CONFIG_USE_PRIVILEGED_MRAM)
-    message(STATUS "Selected MRAM Privileged flash")
+    message(STATUS "${APP_MSG_PREFIX} Selected MRAM Privileged flash")
     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=AT_MEM_L3_MRAMFLASH)
 else()
     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=)
@@ -135,6 +137,9 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DAT_CNN=${AT_CNN})
 if (DEFINED PERF_CI)
 list(APPEND TARGET_PREPROCESSOR -DPERF_CI=${PERF_CI})
+endif()
+if (CONFIG_MODEL_REENTRANT_MODE)
+list(APPEND TARGET_PREPROCESSOR -DREENTRANT)
 endif()
 
 project(${TARGET_NAME} C ASM)

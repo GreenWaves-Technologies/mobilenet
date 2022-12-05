@@ -30,18 +30,37 @@ L2_MEM NETWORK_OUT_TYPE *ResOut;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE mobilenet_L3_Flash = 0;
 AT_HYPERFLASH_FS_EXT_ADDR_TYPE mobilenet_L3_PrivilegedFlash = 0;
 
+#ifdef REENTRANT
+AT_CTXT_TYPE *Ctxt;
+AT_DEFAULTFLASH_FS_T Flash;
+AT_EMRAMFLASH_FS_T PrivilegedFlash;
+int runprint=0;
+static int RunPrint(){
+    while(runprint<4){
+        printf("Low priority cluster task execution %d/3\n",runprint++);
+        if(pi_cl_task_yield()) return 0;
+    }
+    runprint=0;
+    return 0;
+}
+#endif
+
 static void RunNetwork()
 {
-  printf("Running on cluster\n");
+  //printf("Running on cluster\n");
 #ifdef PERF
-  printf("Start timer\n");
+  //printf("Start timer\n");
   gap_cl_starttimer();
   gap_cl_resethwtimer();
 #endif
 
+  #ifdef REENTRANT
+	AT_CNN(Ctxt, ResOut, 0);
+  #else
   GPIO_HIGH();
   AT_CNN(ResOut);
   GPIO_LOW();
+  #endif
 }
 
 int body(void)
@@ -52,9 +71,13 @@ int body(void)
 	struct pi_device cluster_dev;
 	struct pi_cluster_conf conf;
 	pi_cluster_conf_init(&conf);
+	#ifdef REENTRANT
+    int stacks_size = SLAVE_STACK_SIZE * pi_cl_cluster_nb_pe_cores();
+    conf.scratch_size = stacks_size;
+	#endif
 	conf.cc_stack_size = STACK_SIZE;
                      // Enable the special icache for the master core
-  conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |
+  	conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |
 		                 // Enable the prefetch for all the cores, it's a 9bits mask (from bit 2 to bit 10), each bit correspond to 1 core
 		                 PI_CLUSTER_ICACHE_PREFETCH_ENABLE |
 		                 // Enable the icache for all the cores
@@ -81,14 +104,45 @@ int body(void)
   	pmsis_exit(-1);
 	}
 
-	// Network Constructor
-	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
-	int err_const = AT_CONSTRUCT();
-	if (err_const)
-	{
-	  printf("Graph constructor exited with error: %d\n", err_const);
-	  pmsis_exit(-2);
-	}
+	#ifdef REENTRANT
+		int Status;
+		CNN_Graph_Descr_T _Descr = {0, &Flash, 0, 0, &PrivilegedFlash}, *Descr = &_Descr;
+		{
+			int Error;
+			AT_DEFAULTFLASH_FS_CONF_T FlashConf;
+			AT_DEFAULTFLASH_FS_CONF_INIT(&FlashConf, AT_MEM_L3_HFLASH, 0);
+			AT_DEFAULTFLASH_FS_OPEN((AT_DEFAULTFLASH_FS_T *) Descr->Flash, &FlashConf, 0, &Error);
+
+			AT_EMRAMFLASH_FS_CONF_T PrivilegedFlashConf;
+			AT_EMRAMFLASH_FS_CONF_INIT(&PrivilegedFlashConf, AT_MEM_L3_EMRAMFLASH, 0);
+			AT_EMRAMFLASH_FS_OPEN((AT_EMRAMFLASH_FS_T *) Descr->PrivilegedFlash, &PrivilegedFlashConf, 0, &Error);
+			if (Error) {
+				printf("Flash open failed\n"); return 1;
+			} else printf("Flash is open\n");
+		}
+		mobilenetCNN_Construct(Descr);
+		Ctxt = mobilenetCNN_AllocCtxt(Descr,
+									  0,      /* Ctxt Mem */
+									  0,      /* L1 */
+									  0,      /* L2 Dyn */
+									  0,      /* L3 Dyn */
+									  0,
+									  &Status);
+		if(Status){
+			printf("Construct Error %d\n",Status);
+			pmsis_exit(-1);
+		}
+		unsigned char * Input_1 = (unsigned char *) mobilenetCNN_CtxtGetAllocatedInputPointer(Ctxt, 0);
+	#else
+		// Network Constructor
+		// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
+		int err_const = AT_CONSTRUCT();
+		if (err_const)
+		{
+		  printf("Graph constructor exited with error: %d\n", err_const);
+		  pmsis_exit(-2);
+		}
+	#endif
 
 #ifndef FAKE_INPUT
 	char *ImageName = __XSTR(AT_IMAGE);
@@ -110,9 +164,40 @@ int body(void)
 	printf("Stack size is %d and %d\n",STACK_SIZE,SLAVE_STACK_SIZE );
 	printf("Model:\t%s\n\n", __XSTR(AT_MODEL_PREFIX));
     pi_cluster_task(task, (void (*)(void *))&RunNetwork, NULL);
+
+    #ifdef REENTRANT
+    /*
+    pi_cluster_enqueue_task_async function is similar to pi_cluster_send_task but supports priority 0 and 1 and do not support automatic stack allocation.
+    Stacks must always be allocated by the caller.
+    */
+    void *stacks = pi_cl_l1_scratch_alloc(&cluster_dev, task, stacks_size);
+    pi_cluster_task_stacks(task, stacks, STACK_SIZE);
+
+    struct pi_cluster_task *task_1 = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    pi_cluster_task(task_1, (void (*)(void *))RunPrint, NULL);
+    stacks = pi_cl_l1_scratch_alloc(&cluster_dev, task_1, stacks_size);
+    pi_cluster_task_stacks(task_1, stacks, STACK_SIZE);
+
+
+    printf("Calling Cluster\n");
+    static pi_evt_t end_task_nn,end_task_print;
+
+    pi_evt_sig_init(&end_task_nn);
+    pi_evt_sig_init(&end_task_print);
+
+    pi_cluster_task_priority(task_1, 1);
+
+    pi_cluster_enqueue_task_async(&cluster_dev, task,&end_task_nn);
+    //pi_cluster_enqueue_task_async(&cluster_dev, task_1,&end_task_print);
+
+    printf("Waiting\n");
+    //pi_evt_wait(&end_task_print);
+    pi_evt_wait(&end_task_nn);
+    #else
     pi_cluster_task_stacks(task, NULL, SLAVE_STACK_SIZE);
 	// Dispatch task on the cluster 
 	pi_cluster_send_task_to_cl(&cluster_dev, task);
+	#endif
 
 	//Check Results
 	int outclass = 0, MaxPrediction = 0;
@@ -144,7 +229,12 @@ int body(void)
 #endif
 
 	// Netwrok Destructor
+	#ifdef REENTRANT
+    mobilenetCNN_DeAllocCtxt(Ctxt, 1, 1, 1, 1);
+    mobilenetCNN_Destruct(Descr, 1, 1);
+	#else
 	AT_DESTRUCT();
+	#endif
 	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);
 	if((strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v1_1_0_224_quant")==0) || (strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v2_1_0_224_quant")==0)){
@@ -173,6 +263,6 @@ int body(void)
 int main(void)
 {
     printf("\n\n\t *** ImageNet classification on GAP ***\n");
-    return pmsis_kickoff((void *) body);
+    return body();
 }
 

@@ -130,7 +130,7 @@ macro(model_choice)
     set(AT_L3_ADDR mobilenet_L3_Flash)
     set(AT_L3_2_ADDR mobilenet_L3_PrivilegedFlash)
 
-    message(STATUS ">> Selected model: ${CONFIG_NNTOOL_MODEL_PATH} <<")
+    message(STATUS "${APP_MSG_PREFIX} >> Selected model: ${CONFIG_NNTOOL_MODEL_PATH} <<")
 endmacro()
 
 

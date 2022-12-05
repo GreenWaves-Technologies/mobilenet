@@ -177,6 +177,6 @@ int body(void)
 int main(void)
 {
     printf("\n\n\t *** ImageNet classification on GAP ***\n");
-    return pmsis_kickoff((void *) body);
+    return body();
 }
 
