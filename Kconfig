@@ -62,5 +62,14 @@ menu "Mobilenet menu"
         select DRIVER_MRAM
         default y
 
+    config GPIO_MEAS
+        bool "Use GPIO to track nn execution"
+        default n
+
+    config SILENT
+        bool "Silence Imgio printfs"
+        default n
+
+
 endmenu
 source "$(GAP_SDK_HOME)/utils/kconfig/Kconfig"
