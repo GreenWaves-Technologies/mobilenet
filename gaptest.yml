@@ -36,7 +36,6 @@ variants:
             - CONFIG_CNN_SQ8=y
             - CONFIG_MODEL_NE16=y
             - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_MODEL_ID=0
             - CONFIG_NNTOOL_MODEL_QUANTIZED=y
             - CONFIG_MODEL_LOGLEVEL=1
             - CONFIG_ENABLE_NNTOOL=y
@@ -126,7 +125,6 @@ variants:
             - CONFIG_CNN_SQ8=y
             - CONFIG_MODEL_NE16=y
             - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_MODEL_ID=0
             - CONFIG_NNTOOL_MODEL_QUANTIZED=y
             - CONFIG_MODEL_LOGLEVEL=1
             - CONFIG_ENABLE_NNTOOL=y
