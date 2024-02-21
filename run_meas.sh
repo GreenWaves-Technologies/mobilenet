@@ -1,25 +1,13 @@
-ID=0
-NE16=1
-FP16=0
 
-START_MODEL=24
-STOP_MODEL=33
-SEC_FLASH=1
-LOG_DIR="log_meas"
+
+PLATFORM=gvsoc
+
+START_MODEL=19
+STOP_MODEL=32
+
+LOG_DIR="../log_meas"
 if [[ ! -e $LOG_DIR ]]; then
     mkdir $LOG_DIR
-fi
-
-MAIN=main.c
-SUFF="sq8"
-if [ ${NE16} -eq 1 ]
-then
-	SUFF="ne16"
-fi
-if [ ${FP16} -eq 1 ]
-then
-	MAIN=main_fp16.c
-	SUFF="fp16"
 fi
 
 wait_finished_job() {
@@ -39,25 +27,45 @@ wait_finished_job() {
 	fi
 }
 
+MEAS_SCRIPT=$GAP_SDK_HOME/utils/power_meas_utils/ps4444Measure.py
+if [ "$PLATFORM" = "gvsoc" ]; then 
+    echo "Running on Gvsoc"
+    OPTS_PLATFORM="-DCONFIG_PLATFORM_GVSOC=y"
+    MEAS_CMD="echo \"Gvsoc does not have power\" >"
+    WAIT_MEAS=
+else
+    echo "Running on BOARD"
+    OPTS_PLATFORM="-DCONFIG_PLATFORM_BOARD=y -DCONFIG_GPIO_MEAS=y"
+    MEAS_CMD=python ${MEAS_SCRIPT}
+    WAIT_MEAS=wait_finished_job
+fi;
+
+meas_cmd () {
+    ${MEAS_CMD} $1
+}
+wait_meas_cmd () {
+    ${WAIT_MEAS}
+}
+
+OPTS_370MHZ="-DCONFIG_VOLTAGE=800 -DCONFIG_FREQUENCY_PERIPH=370000000 -DCONFIG_FREQUENCY_FC=370000000 -DCONFIG_FREQUENCY_CLUSTER=370000000"
+OPTS_240MHZ="-DCONFIG_VOLTAGE=650 -DCONFIG_FREQUENCY_PERIPH=240000000 -DCONFIG_FREQUENCY_FC=240000000 -DCONFIG_FREQUENCY_CLUSTER=240000000"
+
 for ID in `seq $START_MODEL $STOP_MODEL`;
 do
-	touch ${MAIN}
-	make_cmd="make MODEL_ID=${ID} USE_PRIVILEGED_FLASH=${SEC_FLASH} MODEL_NE16=${NE16} MODEL_FP16=${FP16} MODEL_HWC=1"
-	echo ${make_cmd}
-	${make_cmd} clean_model model > ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_at.log
-	${make_cmd} all -j
+    # common options
+    CMAKE_CMD="cmake ../ -DCONFIG_MODEL_ID=${ID} ${OPTS_PLATFORM}"
+
+	${CMAKE_CMD} ${OPTS_370MHZ}
+	make clean_model model > ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_at.log
 
 	# High Performance
-	F=370
-	V=800
-	python $GAP_SDK_HOME/utils/power_meas_utils/ps4444Measure.py ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_${F}MHz_${V}mV & touch ${MAIN} && \
-	${make_cmd} MEAS=1 FREQ_CL=${F} FREQ_FC=${F} FREQ_PE=${F} VOLTAGE=${V} run
-	wait_finished_job
+    meas_cmd ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_370MHz_800mV
+	make run -j > ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_perf_370MHz.log
+    wait_meas_cmd
 
 	# Energy Efficient
-	F=240
-	V=650
-	python $GAP_SDK_HOME/utils/power_meas_utils/ps4444Measure.py ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_${F}MHz_${V}mV & touch ${MAIN} && \
-	${make_cmd} MEAS=1 FREQ_CL=${F} FREQ_FC=${F} FREQ_PE=${F} VOLTAGE=${V} run
-	wait_finished_job
+	${CMAKE_CMD} ${OPTS_240MHZ}
+    meas_cmd ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_240MHz_650mV
+	make run -j > ${LOG_DIR}/mobilenet_id_${ID}_${SUFF}_perf_240MHz.log
+    wait_meas_cmd
 done
