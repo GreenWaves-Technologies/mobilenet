@@ -136,7 +136,7 @@ int body(void)
 	#else
 		// Network Constructor
 		// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
-		int err_const = AT_CONSTRUCT();
+		int err_const = AT_CONSTRUCT(0);
 		if (err_const)
 		{
 		  printf("Graph constructor exited with error: %d\n", err_const);
@@ -148,15 +148,20 @@ int body(void)
 	char *ImageName = __XSTR(AT_IMAGE);
 	//Reading Image from Bridge
 	img_io_out_t type = IMGIO_OUTPUT_CHAR;
-	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, 0)) {
+	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, Input_1, AT_INPUT_SIZE*sizeof(char), type, TRANSPOSE_2_CHW)) {
 		printf("Failed to load image %s\n", ImageName);
 		pmsis_exit(-1);
 	}
-	printf("Finished reading image\n");
+	long int checksum = 0;
+	for (int i=0; i<AT_INPUT_SIZE; i++) checksum += Input_1[i];
+	printf("Finished reading image (%s) (checksum=%d)\n", TRANSPOSE_2_CHW?"CHW":"HWC", checksum);
 #endif // FAKE_INPUT
-	#ifdef MODEL_HWC // HWC does not have the image formatter in front
+	#ifndef MODEL_NE16 // HWC does not have the image formatter in front
 		for (int i=0; i<AT_INPUT_SIZE; i++) Input_1[i] -= 128;
 	#endif
+	checksum = 0;
+	for (int i=0; i<AT_INPUT_SIZE; i++) checksum += Input_1[i];
+	printf("Finished reading image (checksum=%d)\n", checksum);
 
 	// Task setup
 	struct pi_cluster_task* task = (struct pi_cluster_task*)pi_l2_malloc(sizeof(struct pi_cluster_task));
@@ -233,7 +238,7 @@ int body(void)
     mobilenetCNN_DeAllocCtxt(Ctxt, 1, 1, 1, 1);
     mobilenetCNN_Destruct(Descr, 1, 1);
 	#else
-	AT_DESTRUCT();
+	AT_DESTRUCT(0);
 	#endif
 	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);

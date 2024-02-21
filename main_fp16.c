@@ -54,7 +54,7 @@ int body(void)
 	pi_cluster_conf_init(&conf);
 	conf.cc_stack_size = STACK_SIZE;
                      // Enable the special icache for the master core
-  conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |
+  	conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |
 		                 // Enable the prefetch for all the cores, it's a 9bits mask (from bit 2 to bit 10), each bit correspond to 1 core
 		                 PI_CLUSTER_ICACHE_PREFETCH_ENABLE |
 		                 // Enable the icache for all the cores
@@ -83,7 +83,7 @@ int body(void)
 
 	// Network Constructor
 	// IMPORTANT: MUST BE CALLED AFTER THE CLUSTER IS ON!
-	int err_const = AT_CONSTRUCT();
+	int err_const = AT_CONSTRUCT(0);
 	if (err_const)
 	{
 	  printf("Graph constructor exited with error: %d\n", err_const);
@@ -94,15 +94,11 @@ int body(void)
 	char *ImageName = __XSTR(AT_IMAGE);
 	//Reading Image from Bridge
 	img_io_out_t type = IMGIO_OUTPUT_CHAR;
-	#ifdef MODEL_HWC
-	int out_chw = 0;
-	#else
-	int out_chw = 1;
-	#endif
-	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, (unsigned char *) Input_1, AT_INPUT_SIZE*sizeof(char), type, out_chw)) {
+	if (ReadImageFromFile(ImageName, AT_INPUT_WIDTH, AT_INPUT_HEIGHT, AT_INPUT_COLORS, (unsigned char *) Input_1, AT_INPUT_SIZE*sizeof(char), type, TRANSPOSE_2_CHW)) {
 		printf("Failed to load image %s\n", ImageName);
 		pmsis_exit(-1);
 	}
+	printf("Finisged reading image in %s order\n", TRANSPOSE_2_CHW?"CHW":"HWC");
 
 	// Normalize to [-1:1] float
 	for (int i=AT_INPUT_SIZE; i>=0; i--) Input_1[i] = ((float) (((unsigned char *)Input_1)[i])) / (1<<7) - 1.0;
@@ -148,7 +144,7 @@ int body(void)
 #endif
 
 	// Netwrok Destructor
-	AT_DESTRUCT();
+	AT_DESTRUCT(0);
 	AT_L2_FREE(0, ResOut, NUM_CLASSES*sizeof(NETWORK_OUT_TYPE));
 	pi_cluster_close(&cluster_dev);
 	if(strcmp(__XSTR(AT_MODEL_PREFIX),"mobilenet_v1_1_0_224_quant")==0){

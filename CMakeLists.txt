@@ -51,30 +51,35 @@ model_choice()
 
 if(DEFINED CONFIG_MODEL_SQ8_HWC)
     message(STATUS "${APP_MSG_PREFIX} >> Building SQ8 HWC MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc)
-    set(MODEL_SUFFIX _sq8)
+    # set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc)
+    list(APPEND TARGET_PREPROCESSOR -DTRANSPOSE_2_CHW=0)
+    set(QUANT_TYPE         "sq8_hwc")
 
 elseif(DEFINED CONFIG_MODEL_SQ8)
     message(STATUS "${APP_MSG_PREFIX} >> Building SQ8 MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script)
-    set(MODEL_SUFFIX _sq8)
+    # set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script)
+    list(APPEND TARGET_PREPROCESSOR -DTRANSPOSE_2_CHW=1)
+    set(QUANT_TYPE         "sq8")
 
 elseif(DEFINED CONFIG_MODEL_FP16)
     message(STATUS "${APP_MSG_PREFIX} >> Building FP16 MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_fp16)
-    set(MODEL_SUFFIX _fp16)
+    # set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_fp16)
+    list(APPEND TARGET_PREPROCESSOR -DTRANSPOSE_2_CHW=1)
+    set(QUANT_TYPE         "fp16")
     set(MAIN main_fp16.c)
 
 elseif(DEFINED CONFIG_MODEL_FP16_HWC)
     message(STATUS "${APP_MSG_PREFIX} >> Building FP16 HWC MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc_fp16)
-    set(MODEL_SUFFIX _fp16)
+    # set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_hwc_fp16)
+    list(APPEND TARGET_PREPROCESSOR -DTRANSPOSE_2_CHW=0)
+    set(QUANT_TYPE    "fp16_hwc")
     set(MAIN main_fp16.c)
 
 elseif(DEFINED CONFIG_MODEL_NE16)
     message(STATUS "${APP_MSG_PREFIX} >> Building NE16 MobileNet model <<")
-    set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_ne16)
-    set(MODEL_SUFFIX _ne16)
+    # set(CONFIG_NNTOOL_SCRIPT_PATH models/nntool_scripts/nntool_script_ne16)
+    list(APPEND TARGET_PREPROCESSOR -DTRANSPOSE_2_CHW=0 -DMODEL_NE16)
+    set(QUANT_TYPE        "ne16")
 
 
 endif()
@@ -85,15 +90,54 @@ set(IMAGE images/ILSVRC2012_val_00011158_${AT_INPUT_WIDTH}.ppm)
 # NNTool Variables 
 ###############################################################################
 
-if (CONFIG_USE_PRIVILEGED_MRAM)
-    message(STATUS "${APP_MSG_PREFIX} Selected MRAM Privileged flash")
-    list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=AT_MEM_L3_MRAMFLASH)
-else()
-    list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=)
-endif()
-autotiler_define_gen_names(${TARGET_NAME})
-nntool_setup(${TARGET_NAME})
-autotiler_setup(${TARGET_NAME})
+# if (CONFIG_USE_PRIVILEGED_MRAM)
+#     message(STATUS "${APP_MSG_PREFIX} Selected MRAM Privileged flash")
+#     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=AT_MEM_L3_MRAMFLASH)
+# else()
+#     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=)
+# endif()
+# autotiler_define_gen_names(${TARGET_NAME})
+# nntool_setup(${TARGET_NAME})
+# autotiler_setup(${TARGET_NAME})
+
+set(NN_NNTOOL_SCRIPT ${CMAKE_SOURCE_DIR}/models/nntool_scripts/nntool_api.py)
+set(NN_DIR  ${CMAKE_BINARY_DIR}/BUILD_MODEL_NN)
+set(NN_AT_MODEL_PATH      ${NN_DIR}/mobilenetModel.c)
+set(NN_AT_TENSORS_DIR     ${NN_DIR}/tensors)
+set(NN_EXPRESSION_KERNELS ${NN_DIR}/NN_Expression_Kernels.c)
+autotiler_add_model(
+  TARGET_NAME "mobilenet"
+  MODEL_PATH ${NN_AT_MODEL_PATH}
+  MODEL_TENSORS_DIR ${NN_AT_TENSORS_DIR}
+  MODEL_BUILDDIR ${NN_DIR}
+  PRI1_USED TRUE
+  PRI1_FLASH mram
+  PRI1_FILENAME "L3_PrivilegedFlash_Const.dat"
+  PRI2_USED TRUE
+  PRI2_FLASH flash
+  PRI2_FILENAME "L3_Flash_Const.dat"
+  L1_MEMORY ${CONFIG_MODEL_L1_MEMORY}
+  L2_MEMORY ${CONFIG_MODEL_L2_MEMORY}
+  L3_MEMORY ${CONFIG_MODEL_L3_MEMORY}
+  L2STATIC_MEMORY ${CONFIG_MODEL_L2STATIC_MEMORY}
+  L3STATIC_MEMORY ${CONFIG_MODEL_L3STATIC_MEMORY}
+)
+add_custom_command(
+  OUTPUT ${NN_AT_MODEL_PATH} ${NN_AT_TENSORS_DIR} ${NN_EXPRESSION_KERNELS}
+  COMMENT "Generate the autotiler model: ${NN_AT_MODEL_PATH}"
+  DEPENDS ${NN_NNTOOL_SCRIPT}
+  COMMAND python3 ${NN_NNTOOL_SCRIPT} --trained_model=${TRAINED_MODEL_PATH}
+                                      --quant_type=${QUANT_TYPE}
+                                      --expressions_file_path=${NN_EXPRESSION_KERNELS}
+                                      --at_model_path=${NN_AT_MODEL_PATH}
+                                      --tensors_dir=${NN_AT_TENSORS_DIR}
+                                      --flash_type="flash"
+)
+add_custom_target(clean_model
+  COMMENT "clean_model: removing ${COMMON_MODEL_BUILDDIR}/${MODEL_GEN}"
+  COMMAND rm -rf ${NN_AT_MODEL_PATH}
+)
+
 
 ###############################################################################
 # Application dependencies
@@ -101,14 +145,16 @@ autotiler_setup(${TARGET_NAME})
 
 list(APPEND TARGET_SRCS ${MAIN}
                         ${CNN_LIB}
-                        ${COMMON_MODEL_BUILDDIR}/${KERNEL_C}
+                        ${KERNEL_C_PATHS}
+                        ${NN_EXPRESSION_KERNELS}
+                        # ${COMMON_MODEL_BUILDDIR}/${KERNEL_C}
 )
 
 list(APPEND TARGET_INCS -I${TILER_INC}
                         -I${TILER_EMU_INC}
                         -I${GAP_SDK_HOME}/libs/gap_lib/include
                           ${CNN_LIB_INCLUDE}
-                        -I${COMMON_MODEL_BUILDDIR}
+                        -I${NN_DIR}
                         -I${CMAKE_CURRENT_SOURCE_DIR}
                         -I${GAP_SDK_HOME}/utils/power_meas_utils)
 
