@@ -87,7 +87,7 @@ endif()
 set(IMAGE images/ILSVRC2012_val_00011158_${AT_INPUT_WIDTH}.ppm)
 
 ###############################################################################
-# NNTool Variables 
+# NNTool Variables - OLD way using scripts
 ###############################################################################
 
 # if (CONFIG_USE_PRIVILEGED_MRAM)
@@ -99,6 +99,10 @@ set(IMAGE images/ILSVRC2012_val_00011158_${AT_INPUT_WIDTH}.ppm)
 # autotiler_define_gen_names(${TARGET_NAME})
 # nntool_setup(${TARGET_NAME})
 # autotiler_setup(${TARGET_NAME})
+
+###############################################################################
+# NNTool Variables 
+###############################################################################
 
 set(NN_NNTOOL_SCRIPT ${CMAKE_SOURCE_DIR}/models/nntool_scripts/nntool_api.py)
 set(NN_DIR  ${CMAKE_BINARY_DIR}/BUILD_MODEL_NN)
@@ -197,7 +201,6 @@ if (CONFIG_VOLTAGE)
 message("${APP_MSG_PREFIX} VOLTAGE set to ${CONFIG_VOLTAGE}")
 list(APPEND TARGET_PREPROCESSOR -DVOLTAGE=${CONFIG_VOLTAGE})
 endif()
-
 
 project(${TARGET_NAME} C ASM)
 add_executable(${TARGET_NAME} ${TARGET_SRCS})
