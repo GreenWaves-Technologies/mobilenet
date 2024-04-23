@@ -70,6 +70,11 @@ menu "Mobilenet menu"
         bool "Silence Imgio printfs"
         default n
 
+    config PERF_CI
+        int "Perf CI"
+        default 0
+        help
+            Performances check on CI. If 0, no check.
 
 endmenu
 source "$(GAP_SDK_HOME)/utils/kconfig/Kconfig"

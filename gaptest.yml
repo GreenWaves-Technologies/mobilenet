@@ -3,7 +3,9 @@ variants:
     v1_sq8_gvsoc:
         chip: gap9
         board: gap9evk
-        platform: gvsoc
+        platform:
+            - gvsoc
+            - board
         os: freertos
         builder: cmake
         flags:
@@ -27,12 +29,14 @@ variants:
     v2_ne16_gvsoc:
         chip: gap9
         board: gap9evk
-        platform: gvsoc
+        platform:
+            - gvsoc
+            - board
         os: freertos
         builder: cmake
         flags:
             - CONFIG_MODEL_ID=17
-            - PERF_CI=15000000
+            - CONFIG_PERF_CI=15000000
             - CONFIG_CNN_SQ8=y
             - CONFIG_MODEL_NE16=y
             - CONFIG_MODEL_L2_MEMORY=1350000
@@ -49,13 +53,15 @@ variants:
     v1_float16_hwc_gvsoc:
         chip: gap9
         board: gap9evk
-        platform: gvsoc
+        platform:
+            - gvsoc
+            - board
         os: freertos
         builder: cmake
         flags:
             - CONFIG_MODEL_FP16=1
             - CONFIG_MODEL_HWC=1
-            - PERF_CI=120000000
+            - CONFIG_PERF_CI=120000000
             - CONFIG_CNN_SQ8=y
             - CONFIG_MODEL_L2_MEMORY=1350000
             - CONFIG_MODEL_ID=0
@@ -72,98 +78,13 @@ variants:
     v1_ne16_gvsoc:
         chip: gap9
         board: gap9evk
-        platform: gvsoc
+        platform:
+            - gvsoc
+            - board
         os: freertos
         builder: cmake
         flags:
-            - PERF_CI=16000000
-            - CONFIG_CNN_SQ8=y
-            - CONFIG_MODEL_NE16=y
-            - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_MODEL_ID=0
-            - CONFIG_NNTOOL_MODEL_QUANTIZED=y
-            - CONFIG_MODEL_LOGLEVEL=1
-            - CONFIG_ENABLE_NNTOOL=y
-            - CONFIG_LIB_GAP_LIB=y
-            - CONFIG_LIB_GAP_LIB_IMG_IO=y
-            - CONFIG_DRIVER_READFS=y
-            - CONFIG_DRIVER_HOSTFS=y
-            - CONFIG_DRIVER_TYPE_FLASH=y
-            - CONFIG_DRIVER_TYPE_RAM=y
-
-    v1_sq8_board:
-        chip: gap9
-        board: gap9evk
-        platform: board
-        os: freertos
-        builder: cmake
-        flags:
-            - CONFIG_MODEL_SQ8=y
-            - CONFIG_CNN_SQ8=y
-            - CONFIG_MODEL_NE16=y
-            - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_MODEL_ID=0
-            - CONFIG_NNTOOL_MODEL_QUANTIZED=y
-            - CONFIG_MODEL_LOGLEVEL=1
-            - CONFIG_ENABLE_NNTOOL=y
-            - CONFIG_LIB_GAP_LIB=y
-            - CONFIG_LIB_GAP_LIB_IMG_IO=y
-            - CONFIG_DRIVER_READFS=y
-            - CONFIG_DRIVER_HOSTFS=y
-            - CONFIG_DRIVER_TYPE_FLASH=y
-            - CONFIG_DRIVER_TYPE_RAM=y
-
-    v2_ne16_board:
-        chip: gap9
-        board: gap9evk
-        platform: board
-        os: freertos
-        builder: cmake
-        flags:
-            - CONFIG_MODEL_ID=17
-            - PERF_CI=15000000
-            - CONFIG_CNN_SQ8=y
-            - CONFIG_MODEL_NE16=y
-            - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_NNTOOL_MODEL_QUANTIZED=y
-            - CONFIG_MODEL_LOGLEVEL=1
-            - CONFIG_ENABLE_NNTOOL=y
-            - CONFIG_LIB_GAP_LIB=y
-            - CONFIG_LIB_GAP_LIB_IMG_IO=y
-            - CONFIG_DRIVER_READFS=y
-            - CONFIG_DRIVER_HOSTFS=y
-            - CONFIG_DRIVER_TYPE_FLASH=y
-            - CONFIG_DRIVER_TYPE_RAM=y
-
-    v1_float16_hwc_board:
-        chip: gap9
-        board: gap9evk
-        platform: board
-        os: freertos
-        builder: cmake
-        flags:
-            - CONFIG_MODEL_FP16_HWC=y
-            - PERF_CI=120000000
-            - CONFIG_MODEL_L2_MEMORY=1350000
-            - CONFIG_MODEL_ID=0
-            - CONFIG_NNTOOL_MODEL_QUANTIZED=y
-            - CONFIG_MODEL_LOGLEVEL=1
-            - CONFIG_ENABLE_NNTOOL=y
-            - CONFIG_LIB_GAP_LIB=y
-            - CONFIG_LIB_GAP_LIB_IMG_IO=y
-            - CONFIG_DRIVER_READFS=y
-            - CONFIG_DRIVER_HOSTFS=y
-            - CONFIG_DRIVER_TYPE_FLASH=y
-            - CONFIG_DRIVER_TYPE_RAM=y
-
-    v1_ne16_board:
-        chip: gap9
-        board: gap9evk
-        platform: board
-        os: freertos
-        builder: cmake
-        flags:
-            - PERF_CI=16000000
+            - CONFIG_PERF_CI=16000000
             - CONFIG_CNN_SQ8=y
             - CONFIG_MODEL_NE16=y
             - CONFIG_MODEL_L2_MEMORY=1350000

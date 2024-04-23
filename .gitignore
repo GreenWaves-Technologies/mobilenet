@@ -9,3 +9,4 @@ accuracy_on_validation_data/*_emul
 build
 test_model
 __pycache__
+sdk_gaptest*.config
