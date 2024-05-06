@@ -98,7 +98,7 @@ int body(void)
 		printf("Failed to load image %s\n", ImageName);
 		pmsis_exit(-1);
 	}
-	printf("Finisged reading image in %s order\n", TRANSPOSE_2_CHW?"CHW":"HWC");
+	printf("Finished reading image in %s order\n", TRANSPOSE_2_CHW?"CHW":"HWC");
 
 	// Normalize to [-1:1] float
 	for (int i=AT_INPUT_SIZE; i>=0; i--) Input_1[i] = ((float) (((unsigned char *)Input_1)[i])) / (1<<7) - 1.0;

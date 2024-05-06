@@ -87,23 +87,14 @@ endif()
 set(IMAGE images/ILSVRC2012_val_00011158_${AT_INPUT_WIDTH}.ppm)
 
 ###############################################################################
-# NNTool Variables - OLD way using scripts
-###############################################################################
-
-# if (CONFIG_USE_PRIVILEGED_MRAM)
-#     message(STATUS "${APP_MSG_PREFIX} Selected MRAM Privileged flash")
-#     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=AT_MEM_L3_MRAMFLASH)
-# else()
-#     list(APPEND NNTOOLSCRIPT_FLAGS -DMODEL_SEC_L3_FLASH=)
-# endif()
-# autotiler_define_gen_names(${TARGET_NAME})
-# nntool_setup(${TARGET_NAME})
-# autotiler_setup(${TARGET_NAME})
-
-###############################################################################
 # NNTool Variables 
 ###############################################################################
 
+
+if (CONFIG_PER_PATCH_INFERENCE)
+  message(STATUS "${APP_MSG_PREFIX} Patched Inference")
+  list(APPEND EXTRA_FLAGS --per_patch_inference)
+endif()
 set(NN_NNTOOL_SCRIPT ${CMAKE_SOURCE_DIR}/models/nntool_scripts/nntool_api.py)
 set(NN_DIR  ${CMAKE_BINARY_DIR}/BUILD_MODEL_NN)
 set(NN_AT_MODEL_PATH      ${NN_DIR}/mobilenetModel.c)
@@ -136,6 +127,7 @@ add_custom_command(
                                       --at_model_path=${NN_AT_MODEL_PATH}
                                       --tensors_dir=${NN_AT_TENSORS_DIR}
                                       --flash_type="flash"
+                                      ${EXTRA_FLAGS}
 )
 add_custom_target(clean_model
   COMMENT "clean_model: removing ${COMMON_MODEL_BUILDDIR}/${MODEL_GEN}"
@@ -168,9 +160,13 @@ list(APPEND TARGET_CFLAGS   -gdwarf-2
                             -mno-memcpy
                             -fno-tree-loop-distribute-patterns)
 
-math(EXPR FREQ_CL_MHZ "${CONFIG_FREQUENCY_CLUSTER}/1000/1000")
-math(EXPR FREQ_FC_MHZ "${CONFIG_FREQUENCY_FC}/1000/1000")
-math(EXPR FREQ_PE_MHZ "${CONFIG_FREQUENCY_PERIPH}/1000/1000")
+if (CONFIG_MAX_PERF)
+  set(FREQ 370)
+  set(VOLTAGE 800)
+elseif(CONFIG_MAX_EFFICIENCY)
+  set(FREQ 240)
+  set(VOLTAGE 650)
+endif()
 list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DAT_MODEL_PREFIX=${MODEL_NAME}
                                 -DSTACK_SIZE=${CONFIG_CL_MASTER_CORE_STACK_SIZE}
@@ -179,9 +175,10 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DAT_INPUT_HEIGHT=${AT_INPUT_WIDTH}
                                 -DAT_INPUT_WIDTH=${AT_INPUT_HEIGHT}
                                 -DAT_INPUT_COLORS=${AT_INPUT_COLORS}
-                                -DFREQ_CL=${FREQ_CL_MHZ}
-                                -DFREQ_FC=${FREQ_FC_MHZ}
-                                -DFREQ_PE=${FREQ_PE_MHZ}
+                                -DFREQ_CL=${FREQ}
+                                -DFREQ_FC=${FREQ}
+                                -DFREQ_PE=${FREQ}
+                                -DVOLTAGE=${VOLTAGE}
                                 -DAT_CONSTRUCT=${AT_CONSTRUCT}
                                 -DAT_DESTRUCT=${AT_DESTRUCT}
                                 -DAT_CNN=${AT_CNN})
@@ -193,13 +190,6 @@ list(APPEND TARGET_PREPROCESSOR -DREENTRANT)
 endif()
 if (CONFIG_GPIO_MEAS)
 list(APPEND TARGET_PREPROCESSOR -DGPIO_MEAS)
-endif()
-if (CONFIG_SILENT)
-list(APPEND TARGET_PREPROCESSOR -DSILENT)
-endif()
-if (CONFIG_VOLTAGE)
-message("${APP_MSG_PREFIX} VOLTAGE set to ${CONFIG_VOLTAGE}")
-list(APPEND TARGET_PREPROCESSOR -DVOLTAGE=${CONFIG_VOLTAGE})
 endif()
 
 project(${TARGET_NAME} C ASM)

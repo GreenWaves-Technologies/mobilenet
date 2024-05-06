@@ -40,11 +40,11 @@ menu "Mobilenet menu"
             select CNN_FP16
 
         config MODEL_SQ8_HWC
-            bool "SQ8 Model"
+            bool "SQ8 Model HWC"
             select CNN_SQ8
 
         config MODEL_FP16_HWC
-            bool "FP16 Model"
+            bool "FP16 Model HWC"
             select CNN_FP16
 
         config MODEL_NE16
@@ -57,18 +57,25 @@ menu "Mobilenet menu"
         default 0
         range 0 33
 
-    config USE_PRIVILEGED_MRAM
-        bool "Use privileged MRAM Flash"
-        select DRIVER_MRAM
-        default y
+    config PER_PATCH_INFERENCE
+        depends on MODEL_NE16 || MODEL_FP16_HWC
+        bool "Split input into patches"
+        default n
 
     config GPIO_MEAS
         bool "Use GPIO to track nn execution"
         default n
 
-    config SILENT
-        bool "Silence Imgio printfs"
-        default n
+    choice GAP9_OP_POINT
+        prompt "Gap9 DVFS Operating Point"
+
+        config MAX_PERF
+            bool "370MHz @ 0.8V"
+            default y
+
+        config MAX_EFFICIENCY
+            bool "240MHz @ 0.65V"
+    endchoice
 
 
 endmenu

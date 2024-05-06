@@ -14,6 +14,8 @@ def create_model_parser():
                         help="Path to the trained tflite/onnx")
     parser.add_argument('--quant_type', default="fp16", choices=["fp16", "fp16_hwc", "sq8", "sq8_hwc", "ne16"],
                         help="Quantization options")
+    parser.add_argument('--per_patch_inference', action="store_true",
+                        help="Split the inputs into patches and execute one after the other to reduce dynamic memory usage")
     # At options
     parser.add_argument('--tensors_dir', default="tensors",
                         help="Where nntool stores the weights/bias tensors dir (only used in generate and performance mode)")
@@ -30,7 +32,7 @@ def create_model_parser():
     return parser
 
 
-def build_nntool_graph(trained_model, quant_type) -> NNGraph:
+def build_nntool_graph(trained_model, quant_type, per_patch_inference=False) -> NNGraph:
     print(f"Building model with {quant_type} Quantization options")
     
     print(trained_model)
@@ -43,7 +45,7 @@ def build_nntool_graph(trained_model, quant_type) -> NNGraph:
     G.adjust_order()
     G.fusions('scaled_match_group')
 
-    hwc = "hwc" in quant_type
+    hwc = "hwc" in quant_type or "ne16" in quant_type
     if "fp16" in quant_type:
         graph_q_opts = quantization_options(
             scheme="FLOAT",
@@ -70,6 +72,17 @@ def build_nntool_graph(trained_model, quant_type) -> NNGraph:
         node_options=node_opts
     )
 
+    if per_patch_inference:
+        # This code converts part of the model to patch-based inference.
+        # It has been tested for mobilenetv2_224_1
+        if not hwc:
+            raise NotImplementedError("Cannot use per patch inference with CHW layout")
+        G.per_patch_split(
+            "input_1",
+            "CONV_2D_0_5",
+            n_patches=4 if "fp16" in quant_type else 2,
+        )
+
     print(G.qshow([G[0]]))
     print(G.qshow([G[-1]]))
     print(G.show([G[0]]))
@@ -85,6 +98,7 @@ if __name__ == "__main__":
     G = build_nntool_graph(
         args.trained_model,
         args.quant_type,
+        args.per_patch_inference
     )
     G.name = "mobilenet"
 
