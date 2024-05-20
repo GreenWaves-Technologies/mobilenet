@@ -79,7 +79,3 @@ This project is CMake based, you can use `menuconfig` to select the different av
 ## Power Analysis on GAP9
 
 Every model has been tested on GAP9 chip to evaluate performance and power consumption. The devise used is a picoscope 4444
-
-# NOTE
-
-- Makefile is deprecated in the latest SDK. Left here for back compatibility but not supported anymore.
